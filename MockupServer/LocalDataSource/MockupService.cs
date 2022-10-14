@@ -94,7 +94,7 @@ namespace MockupServer.LocalDataSource
             try
             {
                 var table = _db.GetCollection<MockupObject>(originalHost);
-                var data = (await table.FindAsync(x => x.RequestUrl == relativeUrl)).FirstOrDefault();
+                var data = (await table.FindAsync(x => x.RequestUrl == relativeUrl.ToLower())).FirstOrDefault();
                 if (data != null)
                 {
                     _logger.LogInformation($"{relativeUrl} read from MongoDB");
@@ -137,7 +137,13 @@ namespace MockupServer.LocalDataSource
         public async Task InserRecord(string collection, string url, string res)
         {
             var table = _db.GetCollection<MockupObject>(collection);
-            await table.InsertOneAsync(new MockupObject { RequestUrl = url, ResponseData = res });
+            await table.InsertOneAsync(new MockupObject { RequestUrl = url.ToLower(), ResponseData = res });
+        }
+
+        public async Task DeleteRecord(string collection, string url)
+        {
+            var table = _db.GetCollection<MockupObject>(collection);
+            await table.DeleteManyAsync(x => x.RequestUrl == url.ToLower());
         }
     }
 }
