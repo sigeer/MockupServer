@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc.WebApiCompatShim;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MockupServer.Configs;
 using MockupServer.LocalDataSource;
@@ -15,14 +17,19 @@ namespace MockupServer
 {
     public class WebServerService
     {
-        public static IHost Create(string port)
+        public static IHost Create(ServerOptions options)
         {
             try
             {
                 var builder = Host.CreateDefaultBuilder(new string[]
                 {
                         "--e ASPNETCORE_ENVIRONMENT=\"Development\"",
-                        $"--urls=http://localhost:{port}"
+                        $"--urls=http://localhost:{options.Port}"
+                });
+
+                builder.ConfigureAppConfiguration((hostingContext, config) =>
+                {
+                    config.AddJsonFile("appsettings.json", optional: true);
                 });
 
                 builder.UseSerilog((context, config) =>
@@ -51,6 +58,11 @@ namespace MockupServer
                     .WriteTo.Logger(lg => lg.Filter.ByIncludingOnly(p => p.Level == LogEventLevel.Fatal).WriteTo.Async(
                         a => a.File("logs/Fatal-.txt", rollingInterval: RollingInterval.Day)
                     ));
+                });
+
+                builder.ConfigureServices(services =>
+                {
+                    services.AddSingleton<ServerOptions>(options);
                 });
 
                 builder = builder.ConfigureWebHostDefaults(x =>

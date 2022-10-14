@@ -27,7 +27,6 @@ namespace MockupServer
             services.AddSingleton<Http.HttpClientPool>();
             services.AddScoped<IMongoClient>(x => new MongoClient(Configuration["MongoDB"]));
             services.AddScoped<MockupService>();
-            services.AddSingleton<ServerOptions>();
             services.AddCors(options =>
             {
                 options.AddPolicy("cors", v =>

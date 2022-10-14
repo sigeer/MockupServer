@@ -43,11 +43,11 @@ namespace MockupServer.UI
 
             Task.Run(async () =>
             {
-                var options = await SaveAndReadOption();
-                _webApp = WebServerService.Create(TxtPort.Text);
-                _logger = _webApp.Services.GetService<ILogger<Form1>>();
                 try
                 {
+                    var options = await SaveAndReadOption();
+                    _webApp = WebServerService.Create(options);
+                    _logger = _webApp.Services.GetService<ILogger<Form1>>();
                     await _webApp.StartAsync();
                     BeginInvoke(() =>
                     {
