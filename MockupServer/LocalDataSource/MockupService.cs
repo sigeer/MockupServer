@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using MockupServer.Configs;
 using MockupServer.Http;
 using MongoDB.Driver;
@@ -11,11 +12,13 @@ namespace MockupServer.LocalDataSource
     {
         readonly IMongoDatabase _db;
         readonly HttpClientPool _pool;
+        readonly ILogger<MockupService> _logger;
 
-        public MockupService(IMongoClient client, HttpClientPool httpClientPool, IConfiguration configuration)
+        public MockupService(IMongoClient client, HttpClientPool httpClientPool, IConfiguration configuration, ILogger<MockupService> logger)
         {
             _db = client.GetDatabase(configuration["DataBase"] ?? ServerSettings.DefaultDataBase);
             _pool = httpClientPool;
+            _logger = logger;
         }
 
         public async Task<object?> GetObject(string url, string relativeUrl, Dictionary<string, string> headers)
@@ -84,44 +87,46 @@ namespace MockupServer.LocalDataSource
         }
 
 
-        public async Task<HttpResponseMessage?> SendObject(HttpRequestMessage httpRequestMessage, string relativeUrl)
+        public async Task<HttpResponseMessage?> SendObject(HttpRequestMessage httpRequestMessage, string originalHost, string relativeUrl)
         {
-            var httpClient = _pool.GetHttpClient();
-            try
+            
+            var table = _db.GetCollection<MockupObject>(originalHost);
+            var data = (await table.FindAsync(x => x.RequestUrl == relativeUrl)).FirstOrDefault();
+            if (data != null)
             {
-                var remoteData = await httpClient.HttpSendCore(httpRequestMessage);
-                if (remoteData.IsSuccessStatusCode)
-                {
-                    var data = remoteData;
-                    return data;
-                }
-                else
-                {
-                    var table = _db.GetCollection<MockupObject>(DateTime.Today.ToString("yyyyMM"));
-                    var data = (await table.FindAsync(x => x.RequestUrl == relativeUrl)).FirstOrDefault();
-                    if (data != null)
-                    {
-                        var fakeContent = JsonContent.Create(data.ResponseData);
-                        var fakeContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
-                        fakeContentType.CharSet = "utf-8";
-                        fakeContent.Headers.ContentType = fakeContentType;
-                        var fakeData = new HttpResponseMessage() { Content = fakeContent };
-                        return fakeData;
+                _logger.LogInformation($"{relativeUrl} read from MongoDB");
+                var fakeContent = JsonContent.Create(data.ResponseData);
+                var fakeContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+                fakeContentType.CharSet = "utf-8";
+                fakeContent.Headers.ContentType = fakeContentType;
+                var fakeData = new HttpResponseMessage() { Content = fakeContent };
+                return fakeData;
 
+            }
+            else
+            {
+                var httpClient = _pool.GetHttpClient();
+                try
+                {
+                    var remoteData = await httpClient.HttpSendCore(httpRequestMessage);
+                    if (remoteData.IsSuccessStatusCode)
+                    {
+                        _logger.LogInformation($"{relativeUrl} read from {httpRequestMessage.RequestUri.ToString()}");
+                        return remoteData;
                     }
-                    else
-                        return null;
+                    return null;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex.ToString());
+                    throw;
+                }
+                finally
+                {
+                    _pool.Return(httpClient);
                 }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                throw;
-            }
-            finally
-            {
-                _pool.Return(httpClient);
-            }
+
         }
 
         public async Task InserRecord(string url, object res)
