@@ -1,12 +1,14 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Extensions;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MockupServer.Configs;
 using MockupServer.LocalDataSource;
 using MongoDB.Driver;
 using Serilog;
+using Serilog.Core;
 using Serilog.Events;
 
 namespace MockupServer
@@ -24,6 +26,10 @@ namespace MockupServer
 
         public void ConfigureServices(IServiceCollection services)
         {
+            services.Configure<KestrelServerOptions>(o =>
+              {
+                  o.AllowSynchronousIO = true;
+              });
             services.AddSingleton<Http.HttpClientPool>();
             services.AddScoped<IMongoClient>(x => new MongoClient(Configuration["MongoDB"]));
             services.AddScoped<MockupService>();
@@ -65,18 +71,26 @@ namespace MockupServer
 
             app.Run(async (context) =>
             {
-                var dbService = context.RequestServices.GetService<MockupService>()!;
-                var option = context.RequestServices.GetService<ServerOptions>()!;
-                var url = $"{context.Request.Scheme}://{option.OriginalServiceUrl}{context.Request.Path}{context.Request.QueryString}";
-                var relativeUrl = $"{context.Request.Path}{context.Request.QueryString}";
-                var data = await dbService.SendObject(RequestBody.GetHttpRequestMessage(context, url), context.Request.Host.Host, relativeUrl);
-                if (data != null)
+                try
                 {
-                    await data.Content.CopyToAsync(context.Response.Body);
-                    await context.Response.Body.FlushAsync();
+                    var dbService = context.RequestServices.GetService<MockupService>()!;
+                    var option = context.RequestServices.GetService<ServerOptions>()!;
+                    var url = $"{context.Request.Scheme}://{option.OriginalServiceUrl}{context.Request.Path}{context.Request.QueryString}";
+                    var relativeUrl = $"{context.Request.Path}{context.Request.QueryString}";
+                    var data = await dbService.SendObject(RequestBody.GetHttpRequestMessage(context, url), option.OriginalServiceUrl, relativeUrl);
+                    if (data != null)
+                    {
+                        await data.Content.CopyToAsync(context.Response.Body);
+                        await context.Response.Body.FlushAsync();
+                    }
+                    else
+                        context.Response.StatusCode = 204;
                 }
-                else
+                catch (Exception ex)
+                {
+                    Log.Logger.Error(ex.ToString());
                     context.Response.StatusCode = 204;
+                }
             });
         }
     }

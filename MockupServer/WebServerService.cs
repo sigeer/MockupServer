@@ -70,6 +70,7 @@ namespace MockupServer
                     x.UseKestrel().UseStartup<Startup>();
                 });
 
+
                 var app = builder.Build();
 
                 return app;

@@ -5,6 +5,8 @@ using MockupServer.Http;
 using MongoDB.Driver;
 using Newtonsoft.Json;
 using System.Net.Http.Json;
+using System.Net.Http.Formatting;
+using System.Text;
 
 namespace MockupServer.LocalDataSource
 {
@@ -89,49 +91,52 @@ namespace MockupServer.LocalDataSource
 
         public async Task<HttpResponseMessage?> SendObject(HttpRequestMessage httpRequestMessage, string originalHost, string relativeUrl)
         {
-            
-            var table = _db.GetCollection<MockupObject>(originalHost);
-            var data = (await table.FindAsync(x => x.RequestUrl == relativeUrl)).FirstOrDefault();
-            if (data != null)
+            try
             {
-                _logger.LogInformation($"{relativeUrl} read from MongoDB");
-                var fakeContent = JsonContent.Create(data.ResponseData);
-                var fakeContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
-                fakeContentType.CharSet = "utf-8";
-                fakeContent.Headers.ContentType = fakeContentType;
-                var fakeData = new HttpResponseMessage() { Content = fakeContent };
-                return fakeData;
+                var table = _db.GetCollection<MockupObject>(originalHost);
+                var data = (await table.FindAsync(x => x.RequestUrl == relativeUrl)).FirstOrDefault();
+                if (data != null)
+                {
+                    _logger.LogInformation($"{relativeUrl} read from MongoDB");
+                    var fakeContent = new ObjectContent<object>(JsonConvert.DeserializeObject(data.ResponseData), new JsonMediaTypeFormatter(), "application/json");
+                    var fakeContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+                    fakeContentType.CharSet = "utf-8";
+                    fakeContent.Headers.ContentType = fakeContentType;
+                    var fakeData = new HttpResponseMessage() { Content = fakeContent };
+                    return fakeData;
+                }
+                else
+                {
+                    var httpClient = _pool.GetHttpClient();
 
-            }
-            else
-            {
-                var httpClient = _pool.GetHttpClient();
-                try
-                {
-                    var remoteData = await httpClient.HttpSendCore(httpRequestMessage);
-                    if (remoteData.IsSuccessStatusCode)
+                    try
                     {
-                        _logger.LogInformation($"{relativeUrl} read from {httpRequestMessage.RequestUri.ToString()}");
-                        return remoteData;
+                        var remoteData = await httpClient.HttpSendCore(httpRequestMessage);
+                        if (remoteData.IsSuccessStatusCode)
+                        {
+                            _logger.LogInformation($"{relativeUrl} read from {httpRequestMessage.RequestUri.ToString()}");
+                            return remoteData;
+                        }
+                        return null;
                     }
-                    return null;
+
+                    finally
+                    {
+                        _pool.Return(httpClient);
+                    }
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex.ToString());
-                    throw;
-                }
-                finally
-                {
-                    _pool.Return(httpClient);
-                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.ToString());
+                throw;
             }
 
         }
 
-        public async Task InserRecord(string url, object res)
+        public async Task InserRecord(string collection, string url, string res)
         {
-            var table = _db.GetCollection<MockupObject>(DateTime.Today.ToString("yyyyMM"));
+            var table = _db.GetCollection<MockupObject>(collection);
             await table.InsertOneAsync(new MockupObject { RequestUrl = url, ResponseData = res });
         }
     }

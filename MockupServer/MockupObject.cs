@@ -4,6 +4,6 @@
     public class MockupObject
     {
         public string RequestUrl { get; set; }
-        public object ResponseData { get; set; }
+        public string ResponseData { get; set; }
     }
 }

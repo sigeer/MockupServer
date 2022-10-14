@@ -33,7 +33,7 @@ namespace MockupServer.UI
                     MessageBox.Show("body应当是一个json对象");
                     return;
                 }
-                await service.InserRecord(option.OriginalServiceUrlPrefix + TxtUrl.Text, obj);
+                await service.InserRecord(option.OriginalServiceUrl, option.OriginalServiceUrlPrefix + TxtUrl.Text, TxtBody.Text);
             }
             catch (Exception ex)
             {
