@@ -38,6 +38,7 @@
             this.BtnMockupDataForm = new System.Windows.Forms.Button();
             this.label4 = new System.Windows.Forms.Label();
             this.TxtUrlPrefix = new System.Windows.Forms.TextBox();
+            this.BtnDelete = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // label1
@@ -105,7 +106,7 @@
             // 
             this.BtnMockupDataForm.Location = new System.Drawing.Point(12, 195);
             this.BtnMockupDataForm.Name = "BtnMockupDataForm";
-            this.BtnMockupDataForm.Size = new System.Drawing.Size(281, 23);
+            this.BtnMockupDataForm.Size = new System.Drawing.Size(125, 23);
             this.BtnMockupDataForm.TabIndex = 7;
             this.BtnMockupDataForm.Text = "模拟数据表";
             this.BtnMockupDataForm.UseVisualStyleBackColor = true;
@@ -128,11 +129,22 @@
             this.TxtUrlPrefix.Size = new System.Drawing.Size(207, 23);
             this.TxtUrlPrefix.TabIndex = 9;
             // 
+            // BtnDelete
+            // 
+            this.BtnDelete.Location = new System.Drawing.Point(162, 195);
+            this.BtnDelete.Name = "BtnDelete";
+            this.BtnDelete.Size = new System.Drawing.Size(131, 23);
+            this.BtnDelete.TabIndex = 10;
+            this.BtnDelete.Text = "删除模拟数据";
+            this.BtnDelete.UseVisualStyleBackColor = true;
+            this.BtnDelete.Click += new System.EventHandler(this.BtnDelete_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(317, 242);
+            this.Controls.Add(this.BtnDelete);
             this.Controls.Add(this.TxtUrlPrefix);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.BtnMockupDataForm);
@@ -164,5 +176,6 @@
         private Button BtnMockupDataForm;
         private Label label4;
         private TextBox TxtUrlPrefix;
+        private Button BtnDelete;
     }
 }

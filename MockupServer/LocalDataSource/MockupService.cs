@@ -102,7 +102,7 @@ namespace MockupServer.LocalDataSource
                     var fakeContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
                     fakeContentType.CharSet = "utf-8";
                     fakeContent.Headers.ContentType = fakeContentType;
-                    var fakeData = new HttpResponseMessage() { Content = fakeContent };
+                    var fakeData = new HttpResponseMessage() { Content = fakeContent, StatusCode = System.Net.HttpStatusCode.OK };
                     return fakeData;
                 }
                 else
@@ -140,7 +140,7 @@ namespace MockupServer.LocalDataSource
             await table.InsertOneAsync(new MockupObject { RequestUrl = url.ToLower(), ResponseData = res });
         }
 
-        public async Task DeleteRecord(string collection, string url)
+        public async Task DeleteRecordAsync(string collection, string url)
         {
             var table = _db.GetCollection<MockupObject>(collection);
             await table.DeleteManyAsync(x => x.RequestUrl == url.ToLower());

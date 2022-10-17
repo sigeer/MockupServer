@@ -129,12 +129,22 @@ namespace MockupServer.UI
             TxtHost.Enabled = !isStarted;
             TxtUrlPrefix.Enabled = !isStarted;
 
+            BtnDelete.Enabled = isStarted;
             BtnMockupDataForm.Enabled = isStarted;
         }
 
         private void TxtHost_Leave(object sender, EventArgs e)
         {
             //GerateUrlPrefix();
+        }
+
+        private void BtnDelete_Click(object sender, EventArgs e)
+        {
+            if (_webApp != null)
+            {
+                var form = new DeleteRecordForm(_webApp);
+                form.ShowDialog();
+            }
         }
 
         //private void GerateUrlPrefix()
