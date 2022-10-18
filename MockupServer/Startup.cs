@@ -30,6 +30,7 @@ namespace MockupServer
               {
                   o.AllowSynchronousIO = true;
               });
+            services.AddLogging();
             services.AddSingleton<Http.HttpClientPool>();
             services.AddScoped<IMongoClient>(x => new MongoClient(Configuration["MongoDB"]));
             services.AddScoped<MockupService>();
@@ -44,7 +45,6 @@ namespace MockupServer
                     .WithExposedHeaders("Content-Disposition");
                 });
             });
-            services.AddLogging();
         }
 
         public void Configure(IApplicationBuilder app)

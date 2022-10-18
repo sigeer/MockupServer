@@ -119,7 +119,6 @@ namespace MockupServer.LocalDataSource
                         }
                         return null;
                     }
-
                     finally
                     {
                         _pool.Return(httpClient);

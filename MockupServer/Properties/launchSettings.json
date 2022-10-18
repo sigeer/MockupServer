@@ -1,4 +1,4 @@
-﻿{
+{
   "$schema": "https://json.schemastore.org/launchsettings.json",
   "iisSettings": {
     "windowsAuthentication": false,
@@ -11,13 +11,14 @@
   "profiles": {
     "MockupServer": {
       "commandName": "Project",
-      "dotnetRunMessages": true,
+      "commandLineArgs": "--Port=5555 --OriginalServiceUrl=\"localhost:9555\"",
       "launchBrowser": true,
       "launchUrl": "weatherforecast",
-      "applicationUrl": "http://localhost:5017",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
-      }
+      },
+      "applicationUrl": "http://localhost:5017",
+      "dotnetRunMessages": true
     },
     "IIS Express": {
       "commandName": "IISExpress",
