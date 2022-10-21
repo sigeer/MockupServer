@@ -28,7 +28,8 @@ namespace MockupServer.LocalDataSource
             try
             {
                 var table = _db.GetCollection<MockupObject>(originalHost);
-                var data = (await table.FindAsync(x => x.RequestUrl == relativeUrl.ToLower())).FirstOrDefault();
+                relativeUrl = relativeUrl.Replace("?", "\\?").Replace("&", "\\&");
+                var data = (await table.FindAsync(Builders<MockupObject>.Filter.Eq(nameof(MockupObject.RequestUrl), relativeUrl))).FirstOrDefault();
                 if (data != null)
                 {
                     _logger.LogInformation($"{relativeUrl} read from MongoDB");
@@ -70,19 +71,21 @@ namespace MockupServer.LocalDataSource
         public async Task InserRecord(string collection, string url, string res)
         {
             var table = _db.GetCollection<MockupObject>(collection);
-            await table.InsertOneAsync(new MockupObject { RequestUrl = url.ToLower(), ResponseData = res });
+            await table.InsertOneAsync(new MockupObject { RequestUrl = url, ResponseData = res });
         }
 
         public async Task DeleteRecordAsync(string collection, string url)
         {
             var table = _db.GetCollection<MockupObject>(collection);
-            await table.DeleteManyAsync(x => x.RequestUrl == url.ToLower());
+            await table.DeleteManyAsync(x => x.RequestUrl == url);
         }
 
         public async Task<List<MockupObject>> GetDataList(string collection, string kw)
         {
             var table = _db.GetCollection<MockupObject>(collection);
-            var total = await (await table.FindAsync(x => x.RequestUrl.Contains(kw))).ToListAsync();
+            kw = kw.Replace("?", "\\?").Replace("&", "\\&");
+            var total = await (await table.FindAsync(Builders<MockupObject>.Filter.Regex(nameof(MockupObject.RequestUrl), 
+                new MongoDB.Bson.BsonRegularExpression(new System.Text.RegularExpressions.Regex(kw))))).ToListAsync();
             return total;
         }
     }

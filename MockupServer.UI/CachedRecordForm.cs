@@ -90,15 +90,16 @@ namespace MockupServer.UI
 
         private void MenuEdit_Click(object sender, EventArgs e)
         {
-            
             var selectedRow = DataGridViewMain.Rows[DataGridViewMain.SelectedCells[0].RowIndex];
             new InsertRecordForm(new MockupObject { RequestUrl = selectedRow.Cells[0].Value.ToString(), ResponseData = selectedRow.Cells[1].Value.ToString() }, _webApp).ShowDialog();
+            LoadDataGridView();
         }
 
         private async void MenuDelete_Click(object sender, EventArgs e)
         {
             var selectedRow = DataGridViewMain.Rows[DataGridViewMain.SelectedCells[0].RowIndex];
             await _coreService.DeleteRecordAsync(_options.OriginalServiceUrl, selectedRow.Cells[0].Value.ToString());
+            LoadDataGridView();
         }
     }
 }
