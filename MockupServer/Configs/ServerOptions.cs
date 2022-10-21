@@ -4,6 +4,5 @@
     {
         public int Port { get; set; } = 5000;
         public string OriginalServiceUrl { get; set; } = "localhost:80";
-        public string? OriginalServiceUrlPrefix { get; set; }
     }
 }

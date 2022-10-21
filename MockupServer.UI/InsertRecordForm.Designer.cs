@@ -103,6 +103,7 @@
             this.Name = "InsertRecordForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "InsertRecordForm";
+            this.Load += new System.EventHandler(this.InsertRecordForm_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
 

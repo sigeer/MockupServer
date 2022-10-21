@@ -14,7 +14,6 @@ namespace MockupServer.UI
         IHost? _webApp;
         public Form1()
         {
-
             InitializeComponent();
             SetFormStatus(false);
         }
@@ -23,7 +22,7 @@ namespace MockupServer.UI
         {
             if (_webApp != null)
             {
-                var form = new InsertRecordForm( _webApp);
+                var form = new CachedRecordForm( _webApp);
                 form.ShowDialog();
             }
         }
@@ -32,8 +31,6 @@ namespace MockupServer.UI
         {
             if (string.IsNullOrEmpty(TxtHost.Text) 
                 || TxtHost.Text.EndsWith("/") 
-                || (!string.IsNullOrEmpty(TxtUrlPrefix.Text) && !TxtUrlPrefix.Text.StartsWith("/"))
-                || TxtUrlPrefix.Text.EndsWith("/")
                 || string.IsNullOrEmpty(TxtPort.Text) 
                 || !int.TryParse(TxtPort.Text, out int port))
             {
@@ -72,7 +69,6 @@ namespace MockupServer.UI
             var option = new ServerOptions()
             {
                 OriginalServiceUrl = TxtHost.Text,
-                OriginalServiceUrlPrefix = TxtUrlPrefix.Text,
                 Port = port,
             };
             await File.WriteAllTextAsync(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ServerSettings.SettingFileName), JsonConvert.SerializeObject(option));
@@ -113,7 +109,6 @@ namespace MockupServer.UI
                         {
                             TxtPort.Text = configs.Port.ToString();
                             TxtHost.Text = configs.OriginalServiceUrl;
-                            TxtUrlPrefix.Text = configs.OriginalServiceUrlPrefix;
                         });
                     }
                 }
@@ -127,9 +122,7 @@ namespace MockupServer.UI
 
             TxtPort.Enabled = !isStarted;
             TxtHost.Enabled = !isStarted;
-            TxtUrlPrefix.Enabled = !isStarted;
 
-            BtnDelete.Enabled = isStarted;
             BtnMockupDataForm.Enabled = isStarted;
         }
 

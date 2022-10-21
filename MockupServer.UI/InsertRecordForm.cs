@@ -10,9 +10,11 @@ namespace MockupServer.UI
     public partial class InsertRecordForm : Form
     {
         readonly IHost _webApp;
-        public InsertRecordForm(IHost webApp)
+        readonly MockupObject model;
+        public InsertRecordForm(MockupObject defaultModel, IHost webApp)
         {
             _webApp = webApp;
+            model = defaultModel;
             InitializeComponent();
         }
 
@@ -33,7 +35,7 @@ namespace MockupServer.UI
                     MessageBox.Show("body应当是一个json对象");
                     return;
                 }
-                await service.InserRecord(option.OriginalServiceUrl, option.OriginalServiceUrlPrefix + TxtUrl.Text, TxtBody.Text);
+                await service.InserRecord(option.OriginalServiceUrl, TxtUrl.Text, TxtBody.Text);
             }
             catch (Exception ex)
             {
@@ -45,6 +47,12 @@ namespace MockupServer.UI
         private void BtnCancel_Click(object sender, EventArgs e)
         {
             Close();
+        }
+
+        private void InsertRecordForm_Load(object sender, EventArgs e)
+        {
+            TxtUrl.Text = model.RequestUrl;
+            TxtBody.Text = model.ResponseData;
         }
     }
 }

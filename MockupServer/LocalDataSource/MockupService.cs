@@ -23,72 +23,6 @@ namespace MockupServer.LocalDataSource
             _logger = logger;
         }
 
-        public async Task<object?> GetObject(string url, string relativeUrl, Dictionary<string, string> headers)
-        {
-            var httpClient = _pool.GetHttpClient();
-            try
-            {
-                var remoteData = await httpClient.HttpGetCore(url, headers);
-
-                if (remoteData.IsSuccessStatusCode)
-                {
-                    var data = await remoteData.Content.ReadFromJsonAsync<object>();
-                    return data;
-                }
-                else
-                {
-                    var table = _db.GetCollection<MockupObject>(DateTime.Today.ToString("yyyyMM"));
-                    var data = (await table.FindAsync(x => x.RequestUrl == relativeUrl)).FirstOrDefault();
-                    if (data != null)
-                        return data.ResponseData;
-                    else
-                        return null;
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                throw;
-            }
-            finally
-            {
-                _pool.Return(httpClient);
-            }
-        }
-
-        public async Task<object?> PostObject(string url, string relativeUrl, string? postBodyStr, Dictionary<string, string> headers)
-        {
-            var httpClient = _pool.GetHttpClient();
-            try
-            {
-                var remoteData = await httpClient.HttpPostCore(url, JsonConvert.DeserializeObject<object>(postBodyStr), headers);
-                if (remoteData.IsSuccessStatusCode)
-                {
-                    var data = await remoteData.Content.ReadFromJsonAsync<object>();
-                    return data;
-                }
-                else
-                {
-                    var table = _db.GetCollection<MockupObject>(DateTime.Today.ToString("yyyyMM"));
-                    var data = (await table.FindAsync(x => x.RequestUrl == relativeUrl)).FirstOrDefault();
-                    if (data != null)
-                        return data.ResponseData;
-                    else
-                        return null;
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                throw;
-            }
-            finally
-            {
-                _pool.Return(httpClient);
-            }
-        }
-
-
         public async Task<HttpResponseMessage?> SendObject(HttpRequestMessage httpRequestMessage, string originalHost, string relativeUrl)
         {
             try
@@ -143,6 +77,13 @@ namespace MockupServer.LocalDataSource
         {
             var table = _db.GetCollection<MockupObject>(collection);
             await table.DeleteManyAsync(x => x.RequestUrl == url.ToLower());
+        }
+
+        public async Task<List<MockupObject>> GetDataList(string collection, string kw)
+        {
+            var table = _db.GetCollection<MockupObject>(collection);
+            var total = await (await table.FindAsync(x => x.RequestUrl.Contains(kw))).ToListAsync();
+            return total;
         }
     }
 }

@@ -36,9 +36,6 @@
             this.BtnStop = new System.Windows.Forms.Button();
             this.label3 = new System.Windows.Forms.Label();
             this.BtnMockupDataForm = new System.Windows.Forms.Button();
-            this.label4 = new System.Windows.Forms.Label();
-            this.TxtUrlPrefix = new System.Windows.Forms.TextBox();
-            this.BtnDelete = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // label1
@@ -76,7 +73,7 @@
             // 
             // BtnStart
             // 
-            this.BtnStart.Location = new System.Drawing.Point(12, 112);
+            this.BtnStart.Location = new System.Drawing.Point(12, 86);
             this.BtnStart.Name = "BtnStart";
             this.BtnStart.Size = new System.Drawing.Size(125, 23);
             this.BtnStart.TabIndex = 4;
@@ -86,7 +83,7 @@
             // 
             // BtnStop
             // 
-            this.BtnStop.Location = new System.Drawing.Point(162, 112);
+            this.BtnStop.Location = new System.Drawing.Point(165, 86);
             this.BtnStop.Name = "BtnStop";
             this.BtnStop.Size = new System.Drawing.Size(131, 23);
             this.BtnStop.TabIndex = 5;
@@ -96,57 +93,27 @@
             // 
             // label3
             // 
-            this.label3.Location = new System.Drawing.Point(12, 148);
+            this.label3.Location = new System.Drawing.Point(12, 124);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(284, 44);
             this.label3.TabIndex = 6;
-            this.label3.Text = "请求会优先转发至目标服务器，如果返回为200，则使用服务器返回，否则，使用mongodb";
+            this.label3.Text = "请求会优先使用mongodb，如果没有则转发至目标服务器。";
             // 
             // BtnMockupDataForm
             // 
-            this.BtnMockupDataForm.Location = new System.Drawing.Point(12, 195);
+            this.BtnMockupDataForm.Location = new System.Drawing.Point(12, 183);
             this.BtnMockupDataForm.Name = "BtnMockupDataForm";
-            this.BtnMockupDataForm.Size = new System.Drawing.Size(125, 23);
+            this.BtnMockupDataForm.Size = new System.Drawing.Size(284, 23);
             this.BtnMockupDataForm.TabIndex = 7;
             this.BtnMockupDataForm.Text = "模拟数据表";
             this.BtnMockupDataForm.UseVisualStyleBackColor = true;
             this.BtnMockupDataForm.Click += new System.EventHandler(this.BtnMockupDataForm_Click);
             // 
-            // label4
-            // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(12, 83);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(56, 17);
-            this.label4.TabIndex = 8;
-            this.label4.Text = "路由前缀";
-            // 
-            // TxtUrlPrefix
-            // 
-            this.TxtUrlPrefix.Enabled = false;
-            this.TxtUrlPrefix.Location = new System.Drawing.Point(86, 80);
-            this.TxtUrlPrefix.Name = "TxtUrlPrefix";
-            this.TxtUrlPrefix.Size = new System.Drawing.Size(207, 23);
-            this.TxtUrlPrefix.TabIndex = 9;
-            // 
-            // BtnDelete
-            // 
-            this.BtnDelete.Location = new System.Drawing.Point(162, 195);
-            this.BtnDelete.Name = "BtnDelete";
-            this.BtnDelete.Size = new System.Drawing.Size(131, 23);
-            this.BtnDelete.TabIndex = 10;
-            this.BtnDelete.Text = "删除模拟数据";
-            this.BtnDelete.UseVisualStyleBackColor = true;
-            this.BtnDelete.Click += new System.EventHandler(this.BtnDelete_Click);
-            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(317, 242);
-            this.Controls.Add(this.BtnDelete);
-            this.Controls.Add(this.TxtUrlPrefix);
-            this.Controls.Add(this.label4);
+            this.ClientSize = new System.Drawing.Size(317, 223);
             this.Controls.Add(this.BtnMockupDataForm);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.BtnStop);
@@ -174,8 +141,5 @@
         private Button BtnStop;
         private Label label3;
         private Button BtnMockupDataForm;
-        private Label label4;
-        private TextBox TxtUrlPrefix;
-        private Button BtnDelete;
     }
 }
