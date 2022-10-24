@@ -68,10 +68,14 @@ namespace MockupServer.LocalDataSource
 
         }
 
-        public async Task InserRecord(string collection, string url, string res)
+        public async Task InserOrUpdateRecord(string collection, string url, string res)
         {
             var table = _db.GetCollection<MockupObject>(collection);
-            await table.InsertOneAsync(new MockupObject { RequestUrl = url, ResponseData = res });
+            var dbModel = await (await table.FindAsync(x => x.RequestUrl == url)).FirstOrDefaultAsync();
+            if (dbModel == null)
+                await table.InsertOneAsync(new MockupObject { RequestUrl = url, ResponseData = res });
+            else
+                await table.UpdateOneAsync(x => x.RequestUrl == url, Builders<MockupObject>.Update.Set(x => x.ResponseData, res));
         }
 
         public async Task DeleteRecordAsync(string collection, string url)

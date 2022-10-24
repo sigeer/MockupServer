@@ -88,6 +88,7 @@
             // 
             this.TxtFilter.Location = new System.Drawing.Point(50, 18);
             this.TxtFilter.Name = "TxtFilter";
+            this.TxtFilter.PlaceholderText = "支持正则表达式";
             this.TxtFilter.Size = new System.Drawing.Size(243, 23);
             this.TxtFilter.TabIndex = 2;
             // 
