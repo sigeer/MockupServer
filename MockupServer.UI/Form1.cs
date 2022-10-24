@@ -131,15 +131,6 @@ namespace MockupServer.UI
             //GerateUrlPrefix();
         }
 
-        private void BtnDelete_Click(object sender, EventArgs e)
-        {
-            if (_webApp != null)
-            {
-                var form = new DeleteRecordForm(_webApp);
-                form.ShowDialog();
-            }
-        }
-
         //private void GerateUrlPrefix()
         //{
         //    var indexStart = TxtHost.Text.IndexOf('/');
