@@ -42,8 +42,12 @@ namespace MockupServer.UI
             {
                 try
                 {
+                    BeginInvoke(() =>
+                    {
+                        BtnStart.Enabled = false;
+                    });
                     var options = await SaveAndReadOption();
-                    _webApp = WebServerService.Create(options.Port.ToString(), options);
+                    _webApp = WebServerService.Create(options.Port, options);
                     _logger = _webApp.Services.GetService<ILogger<Form1>>()!;
                     await _webApp.StartAsync();
                     BeginInvoke(() =>

@@ -7,6 +7,8 @@ using Newtonsoft.Json;
 using System.Net.Http.Json;
 using System.Net.Http.Formatting;
 using System.Text;
+using System.Net.Security;
+using System.Net;
 
 namespace MockupServer.LocalDataSource
 {
@@ -15,12 +17,18 @@ namespace MockupServer.LocalDataSource
         readonly IMongoDatabase _db;
         readonly HttpClientPool _pool;
         readonly ILogger<MockupService> _logger;
+        readonly HttpClientHandler httpclientHandler;
 
         public MockupService(IMongoClient client, HttpClientPool httpClientPool, IConfiguration configuration, ILogger<MockupService> logger)
         {
             _db = client.GetDatabase(configuration["DataBase"] ?? ServerSettings.DefaultDataBase);
             _pool = httpClientPool;
             _logger = logger;
+            httpclientHandler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = (message, cert, chain, error) => true,
+                UseCookies = true
+            };
         }
 
         public async Task<HttpResponseMessage?> SendObject(HttpRequestMessage httpRequestMessage, string originalHost, string relativeUrl)
@@ -42,7 +50,7 @@ namespace MockupServer.LocalDataSource
                 }
                 else
                 {
-                    var httpClient = _pool.GetHttpClient();
+                    var httpClient = _pool.GetHttpClient(httpclientHandler);
 
                     try
                     {
@@ -52,6 +60,11 @@ namespace MockupServer.LocalDataSource
                             _logger.LogInformation($"{relativeUrl} read from {httpRequestMessage.RequestUri.ToString()}");
                             return remoteData;
                         }
+                        return null;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex.ToString());
                         return null;
                     }
                     finally

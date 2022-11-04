@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
+using Microsoft.AspNetCore.Mvc.WebApiCompatShim;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -77,7 +79,7 @@ namespace MockupServer
                     var option = context.RequestServices.GetService<ServerOptions>()!;
                     var url = $"{context.Request.Scheme}://{option.OriginalServiceUrl}{context.Request.Path}{context.Request.QueryString}";
                     var relativeUrl = $"{context.Request.Path}{context.Request.QueryString}";
-                    var data = await dbService.SendObject(RequestBody.GetHttpRequestMessage(context, url), option.OriginalServiceUrl, relativeUrl);
+                    var data = await dbService.SendObject(await RequestBody.GetHttpRequestMessage(context, url), option.OriginalServiceUrl, relativeUrl);
                     if (data != null)
                     {
                         await data.Content.CopyToAsync(context.Response.Body);
@@ -92,6 +94,62 @@ namespace MockupServer
                     context.Response.StatusCode = 204;
                 }
             });
+        }
+    }
+
+    public static class RequestBody
+    {
+        public static async Task<HttpRequestMessage> GetHttpRequestMessage(HttpContext context, string totalUrl)
+        {
+            var requestMsg = new HttpRequestMessageFeature(context).HttpRequestMessage;
+            requestMsg.RequestUri = new Uri(totalUrl);
+            //if (requestMsg.Content != null)
+            //    requestMsg.Content = requestMsg.Content.Headers.ContentLength == 0 ? null : requestMsg.Content;
+            //requestMsg.Headers.Remove("Accept");
+            //requestMsg.Headers.Remove("Connection");
+            //requestMsg.Headers.Remove("Host");
+            //requestMsg.Headers.Remove("User-Agent");
+            requestMsg.Headers.Remove("Accept-Encoding");
+            requestMsg.Headers.Remove("Accept-Language");
+            //requestMsg.Headers.Remove("Origin");
+            //requestMsg.Headers.Remove("Referer");
+            return await CloneHttpRequestMessageAsync(requestMsg);
+        }
+        private static async Task<HttpRequestMessage> CloneHttpRequestMessageAsync(HttpRequestMessage request)
+        {
+            HttpRequestMessage copyOfRequest = new HttpRequestMessage(request.Method, request.RequestUri);
+
+            // Copy the request's content (via a MemoryStream) into the cloned object
+            var ms = new MemoryStream();
+            if (request.Content != null)
+            {
+                await request.Content.CopyToAsync(ms);
+                ms.Position = 0;
+                copyOfRequest.Content = new StreamContent(ms);
+
+                // Copy the content headers
+                if (request.Content.Headers != null)
+                {
+                    foreach (var h in request.Content.Headers)
+                    {
+                        copyOfRequest.Content.Headers.Add(h.Key, h.Value);
+                    }
+                }
+            }
+
+            copyOfRequest.Version = request.Version;
+
+            foreach (KeyValuePair<string, object> prop in request.Properties)
+            {
+                copyOfRequest.Properties.Add(prop);
+            }
+
+            foreach (KeyValuePair<string, IEnumerable<string>> header in request.Headers)
+            {
+                copyOfRequest.Headers.TryAddWithoutValidation(header.Key, header.Value);
+            }
+
+            return copyOfRequest;
         }
     }
 }

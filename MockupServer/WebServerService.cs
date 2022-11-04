@@ -18,14 +18,14 @@ namespace MockupServer
 {
     public class WebServerService
     {
-        public static IHost Create(string port, ServerOptions options)
+        public static IHost Create(int port, ServerOptions options)
         {
             try
             {
                 var builder = Host.CreateDefaultBuilder(new string[]
                 {
                         "--e ASPNETCORE_ENVIRONMENT=\"Development\"",
-                        $"--urls=http://localhost:{port}"
+                        $"--urls=http://localhost:{port};https://localhost:{port+1};"
                 });
 
                 builder.ConfigureAppConfiguration((hostingContext, config) =>
@@ -141,26 +141,6 @@ namespace MockupServer
                 Console.WriteLine(ex.Message);
                 throw;
             }
-        }
-    }
-
-    public static class RequestBody
-    {
-        public static HttpRequestMessage GetHttpRequestMessage(HttpContext context, string totalUrl)
-        {
-            var requestMsg = new HttpRequestMessageFeature(context).HttpRequestMessage;
-            requestMsg.RequestUri = new Uri(totalUrl);
-            if (requestMsg.Content != null)
-                requestMsg.Content = requestMsg.Content.Headers.ContentLength == 0 ? null : requestMsg.Content;
-            //requestMsg.Headers.Remove("Accept");
-            //requestMsg.Headers.Remove("Connection");
-            //requestMsg.Headers.Remove("Host");
-            //requestMsg.Headers.Remove("User-Agent");
-            requestMsg.Headers.Remove("Accept-Encoding");
-            requestMsg.Headers.Remove("Accept-Language");
-            //requestMsg.Headers.Remove("Origin");
-            //requestMsg.Headers.Remove("Referer");
-            return requestMsg;
         }
     }
 }

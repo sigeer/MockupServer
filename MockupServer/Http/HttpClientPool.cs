@@ -36,8 +36,17 @@ namespace MockupServer.Http
                 Interlocked.Decrement(ref _current);
                 return context;
             }
-
             return new HttpClient();
+        }
+
+        public HttpClient GetHttpClient(HttpMessageHandler handler)
+        {
+            if (_pool.TryDequeue(out var context))
+            {
+                Interlocked.Decrement(ref _current);
+                return context;
+            }
+            return new HttpClient(handler);
         }
 
         public void Return(HttpClient context)
