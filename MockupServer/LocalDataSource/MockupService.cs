@@ -1,9 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using MockupServer.Configs;
 using MockupServer.Http;
 using MockupServer.Models;
-using MongoDB.Driver;
 using Newtonsoft.Json;
 using System.Net.Http.Formatting;
 
@@ -11,14 +9,14 @@ namespace MockupServer.LocalDataSource
 {
     public class MockupService
     {
-        readonly IMongoDatabase _db;
+        readonly IFreeSql _freeSql;
         readonly HttpClientPool _pool;
         readonly ILogger<MockupService> _logger;
         readonly HttpClientHandler httpclientHandler;
 
-        public MockupService(IMongoClient client, HttpClientPool httpClientPool, IConfiguration configuration, ILogger<MockupService> logger)
+        public MockupService(IFreeSql freeSql, HttpClientPool httpClientPool, IConfiguration configuration, ILogger<MockupService> logger)
         {
-            _db = client.GetDatabase(configuration["DataBase"] ?? ServerSettings.DefaultDataBase);
+            _freeSql = freeSql;
             _pool = httpClientPool;
             _logger = logger;
             httpclientHandler = new HttpClientHandler
@@ -55,9 +53,8 @@ namespace MockupServer.LocalDataSource
 
         private async Task<HttpResponseMessage?> GetDataFromCache(HttpRequestMessage httpRequestMessage, string originalHost, string relativeUrl)
         {
-            var table = _db.GetCollection<MockupObject>(originalHost);
             relativeUrl = relativeUrl.Replace("?", "\\?").Replace("&", "\\&");
-            var data = (await table.FindAsync(Builders<MockupObject>.Filter.Eq(nameof(MockupObject.RequestUrl), relativeUrl))).FirstOrDefault();
+            var data = await _freeSql.Select<MockupObject>().Where<MockupObject>(x => x.RequestUrl == relativeUrl).ToOneAsync();
             if (data == null)
                 return null;
 
@@ -86,7 +83,7 @@ namespace MockupServer.LocalDataSource
                         if (remoteData != null)
                         {
                             //record
-                            await InserOrUpdateRecord(originalHost, relativeUrl, JsonConvert.SerializeObject(remoteData));
+                            await InserOrUpdateRecord(relativeUrl, JsonConvert.SerializeObject(remoteData));
                         }
                     }
                     return remoteData;
@@ -100,28 +97,20 @@ namespace MockupServer.LocalDataSource
 
         }
 
-        public async Task InserOrUpdateRecord(string collection, string url, string res)
+        public async Task InserOrUpdateRecord(string url, string res)
         {
-            var table = _db.GetCollection<MockupObject>(collection);
-            var dbModel = await (await table.FindAsync(x => x.RequestUrl == url)).FirstOrDefaultAsync();
-            if (dbModel == null)
-                await table.InsertOneAsync(new MockupObject { RequestUrl = url, ResponseData = res });
-            else
-                await table.UpdateOneAsync(x => x.RequestUrl == url, Builders<MockupObject>.Update.Set(x => x.ResponseData, res));
+            await _freeSql.InsertOrUpdate<MockupObject>().SetSource(new MockupObject { RequestUrl = url, ResponseData = res }).ExecuteAffrowsAsync();
         }
 
-        public async Task DeleteRecordAsync(string collection, string url)
+        public async Task DeleteRecordAsync(string url)
         {
-            var table = _db.GetCollection<MockupObject>(collection);
-            await table.DeleteManyAsync(x => x.RequestUrl == url);
+            await _freeSql.Delete<MockupObject>().Where(x => x.RequestUrl == url).ExecuteAffrowsAsync();
         }
 
-        public async Task<List<MockupObject>> GetDataList(string collection, string kw)
+        public async Task<List<MockupObject>> GetDataList(string kw)
         {
-            var table = _db.GetCollection<MockupObject>(collection);
             kw = kw.Replace("?", "\\?").Replace("&", "\\&");
-            var total = await (await table.FindAsync(Builders<MockupObject>.Filter.Regex(nameof(MockupObject.RequestUrl),
-                new MongoDB.Bson.BsonRegularExpression(new System.Text.RegularExpressions.Regex(kw))))).ToListAsync();
+            var total = await _freeSql.Select<MockupObject>().Where(x => x.RequestUrl.Contains(kw)).ToListAsync();
             return total;
         }
     }

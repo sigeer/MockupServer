@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using FreeSql;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
@@ -8,9 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MockupServer.Configs;
 using MockupServer.LocalDataSource;
-using MongoDB.Driver;
 using Serilog;
-using Serilog.Core;
 using Serilog.Events;
 
 namespace MockupServer
@@ -34,7 +33,14 @@ namespace MockupServer
               });
             services.AddLogging();
             services.AddSingleton<Http.HttpClientPool>();
-            services.AddScoped<IMongoClient>(x => new MongoClient(Configuration["MongoDB"]));
+            var instance = new FreeSqlBuilder().UseConnectionString(DataType.Sqlite, "data source=database.db").Build();
+            instance.Ado.ExecuteScalar("""
+                CREATE TABLE If Not Exists "MockupObject" (
+                  "RequestUrl" varchar(100),
+                  "ResponseData" varchar(100)
+                );
+                """);
+            services.AddScoped<IFreeSql>(o => instance);
             services.AddScoped<MockupService>();
             services.AddCors(options =>
             {
@@ -139,9 +145,9 @@ namespace MockupServer
 
             copyOfRequest.Version = request.Version;
 
-            foreach (KeyValuePair<string, object> prop in request.Properties)
+            foreach (KeyValuePair<string, object> prop in request.Options)
             {
-                copyOfRequest.Properties.Add(prop);
+                copyOfRequest.Options.TryAdd(prop.Key, prop.Value);
             }
 
             foreach (KeyValuePair<string, IEnumerable<string>> header in request.Headers)
