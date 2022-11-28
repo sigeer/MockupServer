@@ -63,7 +63,7 @@ namespace MockupServer.UI
         {
             Task.Run(async () =>
             {
-                var total = await _coreService.GetDataList(_options.OriginalServiceUrl, TxtFilter.Text);
+                var total = await _coreService.GetDataList(TxtFilter.Text);
 
                 BeginInvoke(() =>
                 {
@@ -99,7 +99,7 @@ namespace MockupServer.UI
         private async void MenuDelete_Click(object sender, EventArgs e)
         {
             var selectedRow = DataGridViewMain.Rows[DataGridViewMain.SelectedCells[0].RowIndex];
-            await _coreService.DeleteRecordAsync(_options.OriginalServiceUrl, selectedRow.Cells[0].Value.ToString());
+            await _coreService.DeleteRecordAsync(selectedRow.Cells[0].Value.ToString());
             LoadDataGridView();
         }
     }

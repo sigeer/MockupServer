@@ -1,18 +1,11 @@
-﻿using Microsoft.AspNetCore;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Extensions;
-using Microsoft.AspNetCore.Mvc.WebApiCompatShim;
+﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MockupServer.Configs;
-using MockupServer.LocalDataSource;
 using MockupServer.Utils;
-using MongoDB.Driver;
 using Serilog;
 using Serilog.Events;
-using System.Text;
 
 namespace MockupServer
 {
