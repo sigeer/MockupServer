@@ -135,6 +135,11 @@ namespace MockupServer.UI
             //GerateUrlPrefix();
         }
 
+        private void BtnStartRecord_Click(object sender, EventArgs e)
+        {
+            State.ToggleRecord();
+        }
+
         //private void GerateUrlPrefix()
         //{
         //    var indexStart = TxtHost.Text.IndexOf('/');

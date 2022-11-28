@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using MockupServer.Configs;
 using MockupServer.LocalDataSource;
+using MockupServer.Models;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;

@@ -36,6 +36,7 @@
             this.BtnStop = new System.Windows.Forms.Button();
             this.label3 = new System.Windows.Forms.Label();
             this.BtnMockupDataForm = new System.Windows.Forms.Button();
+            this.BtnStartRecord = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // label1
@@ -93,7 +94,7 @@
             // 
             // label3
             // 
-            this.label3.Location = new System.Drawing.Point(12, 124);
+            this.label3.Location = new System.Drawing.Point(12, 162);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(284, 44);
             this.label3.TabIndex = 6;
@@ -101,7 +102,7 @@
             // 
             // BtnMockupDataForm
             // 
-            this.BtnMockupDataForm.Location = new System.Drawing.Point(12, 183);
+            this.BtnMockupDataForm.Location = new System.Drawing.Point(12, 209);
             this.BtnMockupDataForm.Name = "BtnMockupDataForm";
             this.BtnMockupDataForm.Size = new System.Drawing.Size(284, 23);
             this.BtnMockupDataForm.TabIndex = 7;
@@ -109,11 +110,22 @@
             this.BtnMockupDataForm.UseVisualStyleBackColor = true;
             this.BtnMockupDataForm.Click += new System.EventHandler(this.BtnMockupDataForm_Click);
             // 
+            // BtnStartRecord
+            // 
+            this.BtnStartRecord.Location = new System.Drawing.Point(12, 124);
+            this.BtnStartRecord.Name = "BtnStartRecord";
+            this.BtnStartRecord.Size = new System.Drawing.Size(284, 23);
+            this.BtnStartRecord.TabIndex = 8;
+            this.BtnStartRecord.Text = "录制";
+            this.BtnStartRecord.UseVisualStyleBackColor = true;
+            this.BtnStartRecord.Click += new System.EventHandler(this.BtnStartRecord_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(317, 223);
+            this.ClientSize = new System.Drawing.Size(317, 245);
+            this.Controls.Add(this.BtnStartRecord);
             this.Controls.Add(this.BtnMockupDataForm);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.BtnStop);
@@ -141,5 +153,6 @@
         private Button BtnStop;
         private Label label3;
         private Button BtnMockupDataForm;
+        private Button BtnStartRecord;
     }
 }

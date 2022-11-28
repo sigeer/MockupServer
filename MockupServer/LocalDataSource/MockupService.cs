@@ -2,13 +2,10 @@
 using Microsoft.Extensions.Logging;
 using MockupServer.Configs;
 using MockupServer.Http;
+using MockupServer.Models;
 using MongoDB.Driver;
 using Newtonsoft.Json;
-using System.Net.Http.Json;
 using System.Net.Http.Formatting;
-using System.Text;
-using System.Net.Security;
-using System.Net;
 
 namespace MockupServer.LocalDataSource
 {
@@ -31,46 +28,68 @@ namespace MockupServer.LocalDataSource
             };
         }
 
+        private async Task<HttpResponseMessage?> GetDataFromRemote(HttpRequestMessage httpRequestMessage, string originalHost, string relativeUrl)
+        {
+            var httpClient = _pool.GetHttpClient(httpclientHandler);
+
+            try
+            {
+                var remoteData = await httpClient.HttpSendCore(httpRequestMessage);
+                if (remoteData.IsSuccessStatusCode)
+                {
+                    _logger.LogInformation($"{relativeUrl} read from {httpRequestMessage.RequestUri.ToString()}");
+                    return remoteData;
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.ToString());
+                return null;
+            }
+            finally
+            {
+                _pool.Return(httpClient);
+            }
+        }
+
+        private async Task<HttpResponseMessage?> GetDataFromCache(HttpRequestMessage httpRequestMessage, string originalHost, string relativeUrl)
+        {
+            var table = _db.GetCollection<MockupObject>(originalHost);
+            relativeUrl = relativeUrl.Replace("?", "\\?").Replace("&", "\\&");
+            var data = (await table.FindAsync(Builders<MockupObject>.Filter.Eq(nameof(MockupObject.RequestUrl), relativeUrl))).FirstOrDefault();
+            if (data == null)
+                return null;
+
+            var fakeContent = new ObjectContent<object>(JsonConvert.DeserializeObject(data.ResponseData), new JsonMediaTypeFormatter(), "application/json");
+            var fakeContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+            fakeContentType.CharSet = "utf-8";
+            fakeContent.Headers.ContentType = fakeContentType;
+            var fakeData = new HttpResponseMessage() { Content = fakeContent, StatusCode = System.Net.HttpStatusCode.OK };
+            return fakeData;
+        }
+
         public async Task<HttpResponseMessage?> SendObject(HttpRequestMessage httpRequestMessage, string originalHost, string relativeUrl)
         {
             try
             {
-                var table = _db.GetCollection<MockupObject>(originalHost);
-                relativeUrl = relativeUrl.Replace("?", "\\?").Replace("&", "\\&");
-                var data = (await table.FindAsync(Builders<MockupObject>.Filter.Eq(nameof(MockupObject.RequestUrl), relativeUrl))).FirstOrDefault();
-                if (data != null)
+                var remote = await GetDataFromCache(httpRequestMessage, originalHost, relativeUrl);
+                if (remote != null)
                 {
-                    _logger.LogInformation($"{relativeUrl} read from MongoDB");
-                    var fakeContent = new ObjectContent<object>(JsonConvert.DeserializeObject(data.ResponseData), new JsonMediaTypeFormatter(), "application/json");
-                    var fakeContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
-                    fakeContentType.CharSet = "utf-8";
-                    fakeContent.Headers.ContentType = fakeContentType;
-                    var fakeData = new HttpResponseMessage() { Content = fakeContent, StatusCode = System.Net.HttpStatusCode.OK };
-                    return fakeData;
+                    return remote;
                 }
                 else
                 {
-                    var httpClient = _pool.GetHttpClient(httpclientHandler);
-
-                    try
+                    var remoteData = await GetDataFromRemote(httpRequestMessage, originalHost, relativeUrl);
+                    if (State.IsRecording)
                     {
-                        var remoteData = await httpClient.HttpSendCore(httpRequestMessage);
-                        if (remoteData.IsSuccessStatusCode)
+                        if (remoteData != null)
                         {
-                            _logger.LogInformation($"{relativeUrl} read from {httpRequestMessage.RequestUri.ToString()}");
-                            return remoteData;
+                            //record
+                            await InserOrUpdateRecord(originalHost, relativeUrl, JsonConvert.SerializeObject(remoteData));
                         }
-                        return null;
                     }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex.ToString());
-                        return null;
-                    }
-                    finally
-                    {
-                        _pool.Return(httpClient);
-                    }
+                    return remoteData;
                 }
             }
             catch (Exception ex)
@@ -101,7 +120,7 @@ namespace MockupServer.LocalDataSource
         {
             var table = _db.GetCollection<MockupObject>(collection);
             kw = kw.Replace("?", "\\?").Replace("&", "\\&");
-            var total = await (await table.FindAsync(Builders<MockupObject>.Filter.Regex(nameof(MockupObject.RequestUrl), 
+            var total = await (await table.FindAsync(Builders<MockupObject>.Filter.Regex(nameof(MockupObject.RequestUrl),
                 new MongoDB.Bson.BsonRegularExpression(new System.Text.RegularExpressions.Regex(kw))))).ToListAsync();
             return total;
         }
