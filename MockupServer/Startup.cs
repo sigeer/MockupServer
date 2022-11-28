@@ -37,7 +37,7 @@ namespace MockupServer
             instance.Ado.ExecuteScalar("""
                 CREATE TABLE If Not Exists "MockupObject" (
                   "RequestUrl" varchar(100),
-                  "ResponseData" varchar(100)
+                  "ResponseData" varchar(1000)
                 );
                 """);
             services.AddScoped<IFreeSql>(o => instance);
