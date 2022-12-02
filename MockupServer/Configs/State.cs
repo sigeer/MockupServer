@@ -17,9 +17,10 @@ namespace MockupServer
         {
             IsRecording = false;
         }
-        public static void ToggleRecord()
+        public static bool ToggleRecord()
         {
             IsRecording = !IsRecording;
+            return IsRecording;
         }
     }
 }

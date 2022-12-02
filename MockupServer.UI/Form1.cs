@@ -137,7 +137,8 @@ namespace MockupServer.UI
 
         private void BtnStartRecord_Click(object sender, EventArgs e)
         {
-            State.ToggleRecord();
+            var nowState = State.ToggleRecord();
+            BtnStartRecord.Text = nowState ? "停止录制" : "开始录制";
         }
 
         //private void GerateUrlPrefix()

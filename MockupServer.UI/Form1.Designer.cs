@@ -98,7 +98,7 @@
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(284, 44);
             this.label3.TabIndex = 6;
-            this.label3.Text = "请求会优先使用mongodb，如果没有则转发至目标服务器。";
+            this.label3.Text = "请求会优先使用假数据，如果没有则转发至目标服务器。";
             // 
             // BtnMockupDataForm
             // 
@@ -116,7 +116,7 @@
             this.BtnStartRecord.Name = "BtnStartRecord";
             this.BtnStartRecord.Size = new System.Drawing.Size(284, 23);
             this.BtnStartRecord.TabIndex = 8;
-            this.BtnStartRecord.Text = "录制";
+            this.BtnStartRecord.Text = "开始录制";
             this.BtnStartRecord.UseVisualStyleBackColor = true;
             this.BtnStartRecord.Click += new System.EventHandler(this.BtnStartRecord_Click);
             // 
