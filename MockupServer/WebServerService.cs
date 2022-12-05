@@ -11,14 +11,14 @@ namespace MockupServer
 {
     public class WebServerService
     {
-        public static IHost Create(int port, ServerOptions options)
+        public static IHost Create(ServerOptions options)
         {
             try
             {
                 var builder = Host.CreateDefaultBuilder(new string[]
                 {
                         "--e ASPNETCORE_ENVIRONMENT=\"Development\"",
-                        $"--urls=http://localhost:{port};https://localhost:{port+1};"
+                        $"--urls=http://localhost:{options.Port};https://localhost:{options.Port+1};"
                 });
 
                 builder.ConfigureAppConfiguration((hostingContext, config) =>

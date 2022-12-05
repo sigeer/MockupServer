@@ -40,7 +40,7 @@ namespace MockupServer
                   "ResponseData" varchar(1000)
                 );
                 """);
-            services.AddScoped<IFreeSql>(o => instance);
+            services.AddSingleton<IFreeSql>(instance);
             services.AddScoped<MockupService>();
             services.AddCors(options =>
             {

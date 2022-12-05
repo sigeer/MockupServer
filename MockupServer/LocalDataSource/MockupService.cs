@@ -4,6 +4,7 @@ using MockupServer.Http;
 using MockupServer.Models;
 using Newtonsoft.Json;
 using System.Net.Http.Formatting;
+using System.Net.Mime;
 
 namespace MockupServer.LocalDataSource
 {
@@ -51,14 +52,14 @@ namespace MockupServer.LocalDataSource
             }
         }
 
-        private async Task<HttpResponseMessage?> GetDataFromCache(HttpRequestMessage httpRequestMessage, string originalHost, string relativeUrl)
+        private async Task<HttpResponseMessage?> GetDataFromCache(string relativeUrl)
         {
-            relativeUrl = relativeUrl.Replace("?", "\\?").Replace("&", "\\&");
+            //relativeUrl = relativeUrl.Replace("?", "\\?").Replace("&", "\\&");
             var data = await _freeSql.Select<MockupObject>().Where<MockupObject>(x => x.RequestUrl == relativeUrl).ToOneAsync();
             if (data == null)
                 return null;
 
-            var fakeContent = new ObjectContent<object>(JsonConvert.DeserializeObject(data.ResponseData), new JsonMediaTypeFormatter(), "application/json");
+            var fakeContent = new ObjectContent<object>(JsonConvert.DeserializeObject(data.ResponseData ?? "{}"), new JsonMediaTypeFormatter(), "application/json");
             var fakeContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
             fakeContentType.CharSet = "utf-8";
             fakeContent.Headers.ContentType = fakeContentType;
@@ -70,7 +71,7 @@ namespace MockupServer.LocalDataSource
         {
             try
             {
-                var remote = await GetDataFromCache(httpRequestMessage, originalHost, relativeUrl);
+                var remote = await GetDataFromCache(relativeUrl);
                 if (remote != null)
                 {
                     return remote;
@@ -78,13 +79,13 @@ namespace MockupServer.LocalDataSource
                 else
                 {
                     var remoteData = await GetDataFromRemote(httpRequestMessage, originalHost, relativeUrl);
-                    if (State.IsRecording)
+                    if (State.IsRecording 
+                        && remoteData != null 
+                        && remoteData.IsSuccessStatusCode 
+                        && IsTextMediaType(remoteData.Content.Headers.ContentType?.MediaType))
                     {
-                        if (remoteData != null)
-                        {
-                            //record
-                            await InserOrUpdateRecord(relativeUrl, JsonConvert.SerializeObject(remoteData));
-                        }
+                        //record
+                        await InserOrUpdateRecord(relativeUrl, await remoteData.Content.ReadAsStringAsync());
                     }
                     return remoteData;
                 }
@@ -94,7 +95,13 @@ namespace MockupServer.LocalDataSource
                 _logger.LogError(ex.ToString());
                 throw;
             }
+        }
 
+        public bool IsTextMediaType(string? mediaType)
+        {
+            if (string.IsNullOrEmpty(mediaType))
+                return false;
+            return mediaType.StartsWith("text/") || new string[] { "application/json" , "application/xml" }.Contains(mediaType.ToLower());
         }
 
         public async Task InserOrUpdateRecord(string url, string res)

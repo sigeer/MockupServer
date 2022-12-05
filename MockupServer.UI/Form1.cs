@@ -47,7 +47,7 @@ namespace MockupServer.UI
                         BtnStart.Enabled = false;
                     });
                     var options = await SaveAndReadOption();
-                    _webApp = WebServerService.Create(options.Port, options);
+                    _webApp = WebServerService.Create(options);
                     _logger = _webApp.Services.GetService<ILogger<Form1>>()!;
                     await _webApp.StartAsync();
                     BeginInvoke(() =>
@@ -58,6 +58,10 @@ namespace MockupServer.UI
                 }
                 catch (Exception ex)
                 {
+                    BeginInvoke(() =>
+                    {
+                        BtnStart.Enabled = true;
+                    });
                     _logger.LogError(ex.ToString());
                     _webApp!.Dispose();
                     var err = ex.ToString();
