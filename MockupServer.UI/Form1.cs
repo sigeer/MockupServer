@@ -29,8 +29,8 @@ namespace MockupServer.UI
 
         private void BtnStart_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrEmpty(TxtHost.Text) 
-                || TxtHost.Text.EndsWith("/") 
+            if (string.IsNullOrEmpty(TxtServer.Text) 
+                || TxtServer.Text.EndsWith("/") 
                 || string.IsNullOrEmpty(TxtPort.Text) 
                 || !int.TryParse(TxtPort.Text, out int port))
             {
@@ -76,7 +76,7 @@ namespace MockupServer.UI
             int.TryParse(TxtPort.Text, out int port);
             var option = new ServerOptions()
             {
-                OriginalServiceUrl = TxtHost.Text,
+                OriginalServiceUrl = TxtServer.Text,
                 Port = port,
             };
             await File.WriteAllTextAsync(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ServerSettings.SettingFileName), JsonConvert.SerializeObject(option));
@@ -116,7 +116,7 @@ namespace MockupServer.UI
                         BeginInvoke(() =>
                         {
                             TxtPort.Text = configs.Port.ToString();
-                            TxtHost.Text = configs.OriginalServiceUrl;
+                            TxtServer.Text = configs.OriginalServiceUrl;
                         });
                     }
                 }
@@ -129,7 +129,7 @@ namespace MockupServer.UI
             BtnStop.Enabled = isStarted;
 
             TxtPort.Enabled = !isStarted;
-            TxtHost.Enabled = !isStarted;
+            TxtServer.Enabled = !isStarted;
 
             BtnMockupDataForm.Enabled = isStarted;
         }

@@ -4,7 +4,7 @@ using MockupServer.Http;
 using MockupServer.Models;
 using Newtonsoft.Json;
 using System.Net.Http.Formatting;
-using System.Net.Mime;
+using System.Net.Http.Headers;
 
 namespace MockupServer.LocalDataSource
 {
@@ -27,7 +27,7 @@ namespace MockupServer.LocalDataSource
             };
         }
 
-        private async Task<HttpResponseMessage?> GetDataFromRemote(HttpRequestMessage httpRequestMessage, string originalHost, string relativeUrl)
+        private async Task<HttpResponseMessage?> GetDataFromRemote(HttpRequestMessage httpRequestMessage, string relativeUrl)
         {
             var httpClient = _pool.GetHttpClient(httpclientHandler);
 
@@ -59,15 +59,17 @@ namespace MockupServer.LocalDataSource
             if (data == null)
                 return null;
 
-            var fakeContent = new ObjectContent<object>(JsonConvert.DeserializeObject(data.ResponseData ?? "{}"), new JsonMediaTypeFormatter(), "application/json");
-            var fakeContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
-            fakeContentType.CharSet = "utf-8";
+            var fakeContent = new ObjectContent<object>(JsonConvert.DeserializeObject(data.ResponseData ?? "{}") ?? new object { }, new JsonMediaTypeFormatter(), "application/json");
+            var fakeContentType = new MediaTypeHeaderValue("application/json")
+            {
+                CharSet = "utf-8"
+            };
             fakeContent.Headers.ContentType = fakeContentType;
             var fakeData = new HttpResponseMessage() { Content = fakeContent, StatusCode = System.Net.HttpStatusCode.OK };
             return fakeData;
         }
 
-        public async Task<HttpResponseMessage?> SendObject(HttpRequestMessage httpRequestMessage, string originalHost, string relativeUrl)
+        public async Task<HttpResponseMessage?> SendObject(HttpRequestMessage httpRequestMessage, string relativeUrl)
         {
             try
             {
@@ -78,7 +80,7 @@ namespace MockupServer.LocalDataSource
                 }
                 else
                 {
-                    var remoteData = await GetDataFromRemote(httpRequestMessage, originalHost, relativeUrl);
+                    var remoteData = await GetDataFromRemote(httpRequestMessage, relativeUrl);
                     if (State.IsRecording 
                         && remoteData != null 
                         && remoteData.IsSuccessStatusCode 

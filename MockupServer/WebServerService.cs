@@ -18,7 +18,7 @@ namespace MockupServer
                 var builder = Host.CreateDefaultBuilder(new string[]
                 {
                         "--e ASPNETCORE_ENVIRONMENT=\"Development\"",
-                        $"--urls=http://localhost:{options.Port};https://localhost:{options.Port+1};"
+                        $"--urls=http://*:{options.Port};https://*:{options.Port+1};"
                 });
 
                 builder.ConfigureAppConfiguration((hostingContext, config) =>
