@@ -31,7 +31,7 @@
             this.label1 = new System.Windows.Forms.Label();
             this.TxtPort = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
-            this.TxtHost = new System.Windows.Forms.TextBox();
+            this.TxtServer = new System.Windows.Forms.TextBox();
             this.BtnStart = new System.Windows.Forms.Button();
             this.BtnStop = new System.Windows.Forms.Button();
             this.label3 = new System.Windows.Forms.Label();
@@ -64,13 +64,13 @@
             this.label2.TabIndex = 2;
             this.label2.Text = "目标服务器";
             // 
-            // TxtHost
+            // TxtServer
             // 
-            this.TxtHost.Location = new System.Drawing.Point(86, 47);
-            this.TxtHost.Name = "TxtHost";
-            this.TxtHost.Size = new System.Drawing.Size(210, 23);
-            this.TxtHost.TabIndex = 3;
-            this.TxtHost.Leave += new System.EventHandler(this.TxtHost_Leave);
+            this.TxtServer.Location = new System.Drawing.Point(86, 47);
+            this.TxtServer.Name = "TxtServer";
+            this.TxtServer.Size = new System.Drawing.Size(210, 23);
+            this.TxtServer.TabIndex = 3;
+            this.TxtServer.Leave += new System.EventHandler(this.TxtHost_Leave);
             // 
             // BtnStart
             // 
@@ -130,7 +130,7 @@
             this.Controls.Add(this.label3);
             this.Controls.Add(this.BtnStop);
             this.Controls.Add(this.BtnStart);
-            this.Controls.Add(this.TxtHost);
+            this.Controls.Add(this.TxtServer);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.TxtPort);
             this.Controls.Add(this.label1);
@@ -148,7 +148,7 @@
         private Label label1;
         private TextBox TxtPort;
         private Label label2;
-        private TextBox TxtHost;
+        private TextBox TxtServer;
         private Button BtnStart;
         private Button BtnStop;
         private Label label3;

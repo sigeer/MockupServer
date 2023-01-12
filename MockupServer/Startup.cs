@@ -83,9 +83,9 @@ namespace MockupServer
                 {
                     var dbService = context.RequestServices.GetService<MockupService>()!;
                     var option = context.RequestServices.GetService<ServerOptions>()!;
-                    var url = $"{context.Request.Scheme}://{option.OriginalServiceUrl}{context.Request.Path}{context.Request.QueryString}";
+                    var url = $"{option.OriginalServiceUrl}{context.Request.Path}{context.Request.QueryString}";
                     var relativeUrl = $"{context.Request.Path}{context.Request.QueryString}";
-                    var data = await dbService.SendObject(await RequestBody.GetHttpRequestMessage(context, url), option.OriginalServiceUrl, relativeUrl);
+                    var data = await dbService.SendObject(await RequestBody.GetHttpRequestMessage(context, url), relativeUrl);
                     if (data != null)
                     {
                         await data.Content.CopyToAsync(context.Response.Body);
