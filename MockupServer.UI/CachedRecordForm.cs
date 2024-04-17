@@ -46,7 +46,7 @@ namespace MockupServer.UI
             });
             DataGridViewMain.Columns.Add(new DataGridViewColumn()
             {
-                HeaderText = "请求类型",
+                HeaderText = "返回类型",
                 Name = nameof(MockupObject.ResponseType),
                 Width = 200,
                 CellTemplate = new DataGridViewTextBoxCell(),
