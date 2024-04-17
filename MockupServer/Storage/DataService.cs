@@ -78,7 +78,7 @@ namespace MockupServer.Storage
                     XmlDocument xmlDoc = new XmlDocument();
                     xmlDoc.LoadXml(content);
 
-                    fakeContent = new StringContent(JsonConvert.SerializeXmlNode(xmlDoc), xmlContentType);
+                    fakeContent = new StringContent(xmlDoc.InnerXml, xmlContentType);
                     break;
                 default:
                     var errorMsg = $"不正常的ResponseType={type}";
