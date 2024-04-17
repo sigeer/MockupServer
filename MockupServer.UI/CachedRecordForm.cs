@@ -12,6 +12,8 @@ namespace MockupServer.UI
         {
             _coreService = dataService;
             InitializeComponent();
+
+            MenuItem_CopyUrl.Visible = State.IsRunning;
         }
 
         private void BtnSearch_Click(object sender, EventArgs e)
@@ -115,6 +117,13 @@ namespace MockupServer.UI
             var selectedRow = DataGridViewMain.Rows[DataGridViewMain.SelectedCells[0].RowIndex];
             await _coreService.DeleteRecordAsync(selectedRow.Cells[0].Value.ToString(), selectedRow.Cells[1].Value.ToString());
             LoadDataGridView();
+        }
+
+        private void MenuItem_CopyUrl_Click(object sender, EventArgs e)
+        {
+            var selectedRow = DataGridViewMain.Rows[DataGridViewMain.SelectedCells[0].RowIndex];
+            var uri = selectedRow.Cells[0].Value.ToString();
+            Clipboard.SetText($"http://localhost:{State.Port}{uri}");
         }
 
         private void DataGridViewMain_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)

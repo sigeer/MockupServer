@@ -6,7 +6,7 @@ namespace MockupServer.Models
     public class MockupObject
     {
         public string RequestUrl { get; set; } = null!;
-        public string Method { get; set; } = null!;
+        public string Method { get; set; } = "GET";
 
         /// <summary>
         /// 0. Empty

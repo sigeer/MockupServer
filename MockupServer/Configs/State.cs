@@ -1,26 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace MockupServer
+﻿namespace MockupServer
 {
     public class State
     {
-        public static bool IsRecording = false;
-        public static void StartRecord()
-        {
-            IsRecording = true;
-        }
-        public static void StopRecord()
-        {
-            IsRecording = false;
-        }
-        public static bool ToggleRecord()
-        {
-            IsRecording = !IsRecording;
-            return IsRecording;
-        }
+        public static bool IsRunning { get; set; } = false;
+        public static int Port { get; set; }
     }
 }

@@ -1,6 +1,3 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MockupServer.Configs;
@@ -50,8 +47,8 @@ namespace MockupServer.UI
                     });
                     var options = await SaveAndReadOption();
                     _webApp = WebServerService.Create(options);
-                    _logger = _webApp.Services.GetService<ILogger<Form1>>()!;
                     await _webApp.StartAsync();
+                    State.IsRunning = true;
                     BeginInvoke(() =>
                     {
                         MessageBox.Show("服务器已启动");
@@ -66,6 +63,7 @@ namespace MockupServer.UI
                     });
                     _logger.LogError(ex.ToString());
                     _webApp!.Dispose();
+                    State.IsRunning = false;
                     var err = ex.ToString();
                     MessageBox.Show(err.Length >= 200 ? err.Substring(0, 200) : err);
                 }
@@ -91,6 +89,7 @@ namespace MockupServer.UI
             {
                 await _webApp.StopAsync();
                 _webApp.Dispose();
+                State.IsRunning = false;
                 MessageBox.Show("服务器已停止");
                 SetFormStatus(false);
             }
