@@ -93,8 +93,11 @@ namespace MockupServer
                             context.Response.Headers[header.Key] = header.Value.ToArray();
                         }
                         context.Response.StatusCode = (int)data.StatusCode;
-                        await data.Content.CopyToAsync(context.Response.Body);
-                        await context.Response.Body.FlushAsync();
+                        if (data.StatusCode != System.Net.HttpStatusCode.NotModified)
+                        {
+                            await data.Content.CopyToAsync(context.Response.Body);
+                            await context.Response.Body.FlushAsync();
+                        }
                     }
                     else
                         context.Response.StatusCode = 204;
@@ -102,7 +105,6 @@ namespace MockupServer
                 catch (Exception ex)
                 {
                     Log.Logger.Error(ex.ToString());
-                    context.Response.StatusCode = 204;
                 }
             });
         }
