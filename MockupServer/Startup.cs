@@ -32,16 +32,10 @@ namespace MockupServer
                   o.AllowSynchronousIO = true;
               });
             services.AddLogging();
-            services.AddSingleton<Http.HttpClientPool>();
-            var instance = new FreeSqlBuilder().UseConnectionString(DataType.Sqlite, "data source=database.db").Build();
-            instance.Ado.ExecuteScalar("""
-                CREATE TABLE If Not Exists "MockupObject" (
-                  "RequestUrl" varchar(100),
-                  "ResponseData" varchar(1000)
-                );
-                """);
-            services.AddSingleton<IFreeSql>(instance);
-            services.AddScoped<MockupService>();
+            services.AddMockupBaseService();
+
+            services.AddMockupServerService();
+
             services.AddCors(options =>
             {
                 options.AddPolicy("cors", v =>
@@ -83,9 +77,11 @@ namespace MockupServer
                 {
                     var dbService = context.RequestServices.GetService<MockupService>()!;
                     var option = context.RequestServices.GetService<ServerOptions>()!;
-                    var url = $"{option.OriginalServiceUrl}{context.Request.Path}{context.Request.QueryString}";
+
+                    var newUrl = new Uri($"{option.OriginalServiceUrl}{context.Request.Path}{context.Request.QueryString}");
+
                     var relativeUrl = $"{context.Request.Path}{context.Request.QueryString}";
-                    var data = await dbService.SendObject(await RequestBody.GetHttpRequestMessage(context, url), relativeUrl);
+                    var data = await dbService.GetResponseMessage(await RequestBody.GetHttpRequestMessage(context, newUrl.AbsoluteUri));
                     if (data != null)
                     {
                         await data.Content.CopyToAsync(context.Response.Body);
@@ -115,8 +111,8 @@ namespace MockupServer
             //requestMsg.Headers.Remove("Connection");
             //requestMsg.Headers.Remove("Host");
             //requestMsg.Headers.Remove("User-Agent");
-            requestMsg.Headers.Remove("Accept-Encoding");
-            requestMsg.Headers.Remove("Accept-Language");
+            //requestMsg.Headers.Remove("Accept-Encoding");
+            //requestMsg.Headers.Remove("Accept-Language");
             //requestMsg.Headers.Remove("Origin");
             //requestMsg.Headers.Remove("Referer");
             return await CloneHttpRequestMessageAsync(requestMsg);

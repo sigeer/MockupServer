@@ -1,20 +1,17 @@
-﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using MockupServer.Configs;
-using MockupServer.LocalDataSource;
-using MockupServer.Models;
+﻿using MockupServer.Models;
+using MockupServer.Response;
+using MockupServer.Storage;
 using Newtonsoft.Json;
 
 namespace MockupServer.UI
 {
     public partial class InsertRecordForm : Form
     {
-        readonly IHost _webApp;
+        readonly DataService _dataService;
         readonly MockupObject model;
-        public InsertRecordForm(MockupObject defaultModel, IHost webApp)
+        public InsertRecordForm(MockupObject defaultModel, DataService dataService)
         {
-            _webApp = webApp;
+            _dataService = dataService;
             model = defaultModel;
             InitializeComponent();
         }
@@ -26,22 +23,30 @@ namespace MockupServer.UI
                 MessageBox.Show("url要以/开头，结尾不能带/");
                 return;
             }
-            var service = _webApp.Services.GetService<MockupService>()!;
-            var option = _webApp.Services.GetService<ServerOptions>()!;
-            try
+
+            if (ComboBox_Type.SelectedValue == null)
             {
-                var obj = JsonConvert.DeserializeObject<object>(TxtBody.Text ?? "");
-                if (obj == null)
+                MessageBox.Show("请选择返回类型");
+                return;
+            }
+            if ((ResponseType)ComboBox_Type.SelectedValue == ResponseType.JsonObject)
+            {
+                try
                 {
-                    MessageBox.Show("body应当是一个json对象");
+                    var obj = JsonConvert.DeserializeObject<object>(TxtBody.Text ?? "");
+                    if (obj == null)
+                    {
+                        MessageBox.Show("body应当是一个json对象");
+                        return;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
                     return;
                 }
-                await service.InserOrUpdateRecord(TxtUrl.Text, TxtBody.Text);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
+            await _dataService.InserOrUpdateRecord(TxtUrl.Text, ComboBox_Method.Text, (int)ComboBox_Type.SelectedValue, TxtBody.Text);
             Close();
         }
 
@@ -54,6 +59,17 @@ namespace MockupServer.UI
         {
             TxtUrl.Text = model.RequestUrl;
             TxtBody.Text = model.ResponseData;
+
+            ComboBox_Type.DataSource = new List<KeyValuePair<string, int>>()
+            {
+                new KeyValuePair<string, int>("空", (int)ResponseType.Empty),
+                new KeyValuePair<string, int>("Json对象", (int)ResponseType.JsonObject),
+                new KeyValuePair<string, int>("文本", (int)ResponseType.Text),
+                new KeyValuePair<string, int>("文件", (int)ResponseType.File),
+                new KeyValuePair<string, int>("Xml对象", (int)ResponseType.XmlObject),
+            };
+            ComboBox_Type.ValueMember = "Value";
+            ComboBox_Type.DisplayMember = "Key";
         }
     }
 }
