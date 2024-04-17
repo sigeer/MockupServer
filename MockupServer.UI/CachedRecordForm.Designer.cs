@@ -123,7 +123,7 @@
             Controls.Add(DataGridViewMain);
             Name = "CachedRecordForm";
             StartPosition = FormStartPosition.CenterParent;
-            Text = "CachedRecordForm";
+            Text = "模拟数据 - 管理";
             Load += CachedRecordForm_Load;
             ((System.ComponentModel.ISupportInitialize)DataGridViewMain).EndInit();
             MenuData.ResumeLayout(false);

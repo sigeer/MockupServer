@@ -31,13 +31,13 @@
             label1 = new Label();
             TxtUrl = new TextBox();
             label2 = new Label();
-            TxtBody = new TextBox();
             BtnSave = new Button();
             BtnCancel = new Button();
             label3 = new Label();
             ComboBox_Type = new ComboBox();
             label4 = new Label();
             ComboBox_Method = new ComboBox();
+            Btn_Edit = new LinkLabel();
             SuspendLayout();
             // 
             // label1
@@ -53,7 +53,7 @@
             // 
             TxtUrl.Location = new Point(75, 23);
             TxtUrl.Name = "TxtUrl";
-            TxtUrl.Size = new Size(494, 23);
+            TxtUrl.Size = new Size(181, 23);
             TxtUrl.TabIndex = 1;
             // 
             // label2
@@ -65,18 +65,9 @@
             label2.TabIndex = 2;
             label2.Text = "返回数据";
             // 
-            // TxtBody
-            // 
-            TxtBody.Location = new Point(75, 114);
-            TxtBody.Multiline = true;
-            TxtBody.Name = "TxtBody";
-            TxtBody.ScrollBars = ScrollBars.Vertical;
-            TxtBody.Size = new Size(494, 236);
-            TxtBody.TabIndex = 3;
-            // 
             // BtnSave
             // 
-            BtnSave.Location = new Point(413, 356);
+            BtnSave.Location = new Point(181, 147);
             BtnSave.Name = "BtnSave";
             BtnSave.Size = new Size(75, 23);
             BtnSave.TabIndex = 4;
@@ -86,7 +77,7 @@
             // 
             // BtnCancel
             // 
-            BtnCancel.Location = new Point(494, 356);
+            BtnCancel.Location = new Point(100, 147);
             BtnCancel.Name = "BtnCancel";
             BtnCancel.Size = new Size(75, 23);
             BtnCancel.TabIndex = 5;
@@ -129,24 +120,35 @@
             ComboBox_Method.Size = new Size(181, 25);
             ComboBox_Method.TabIndex = 9;
             // 
+            // Btn_Edit
+            // 
+            Btn_Edit.AutoSize = true;
+            Btn_Edit.Location = new Point(75, 117);
+            Btn_Edit.Name = "Btn_Edit";
+            Btn_Edit.Size = new Size(56, 17);
+            Btn_Edit.TabIndex = 11;
+            Btn_Edit.TabStop = true;
+            Btn_Edit.Text = "编辑内容";
+            Btn_Edit.LinkClicked += Btn_Edit_LinkClicked;
+            // 
             // InsertRecordForm
             // 
             AutoScaleDimensions = new SizeF(7F, 17F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(605, 391);
+            ClientSize = new Size(291, 182);
+            Controls.Add(Btn_Edit);
             Controls.Add(ComboBox_Method);
             Controls.Add(label4);
             Controls.Add(ComboBox_Type);
             Controls.Add(label3);
             Controls.Add(BtnCancel);
             Controls.Add(BtnSave);
-            Controls.Add(TxtBody);
             Controls.Add(label2);
             Controls.Add(TxtUrl);
             Controls.Add(label1);
             Name = "InsertRecordForm";
             StartPosition = FormStartPosition.CenterScreen;
-            Text = "InsertRecordForm";
+            Text = "模拟数据 - 编辑";
             Load += InsertRecordForm_Load;
             ResumeLayout(false);
             PerformLayout();
@@ -157,12 +159,12 @@
         private Label label1;
         private TextBox TxtUrl;
         private Label label2;
-        private TextBox TxtBody;
         private Button BtnSave;
         private Button BtnCancel;
         private Label label3;
         private ComboBox ComboBox_Type;
         private Label label4;
         private ComboBox ComboBox_Method;
+        private LinkLabel Btn_Edit;
     }
 }

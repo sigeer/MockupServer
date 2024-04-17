@@ -9,6 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="ICSharpCode.TextEditor" Version="3.2.1.6466" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\MockupServer\MockupServer.csproj" />
   </ItemGroup>
 
