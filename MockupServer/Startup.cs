@@ -84,6 +84,15 @@ namespace MockupServer
                     var data = await dbService.GetResponseMessage(await RequestBody.GetHttpRequestMessage(context, newUrl.AbsoluteUri));
                     if (data != null)
                     {
+                        foreach (var header in data.Headers)
+                        {
+                            context.Response.Headers[header.Key] = header.Value.ToArray();
+                        }
+                        foreach (var header in data.Content.Headers)
+                        {
+                            context.Response.Headers[header.Key] = header.Value.ToArray();
+                        }
+                        context.Response.StatusCode = (int)data.StatusCode;
                         await data.Content.CopyToAsync(context.Response.Body);
                         await context.Response.Body.FlushAsync();
                     }

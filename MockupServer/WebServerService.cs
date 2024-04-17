@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using MockupServer.Configs;
 using Serilog;
 using Serilog.Events;
@@ -16,6 +17,7 @@ namespace MockupServer
         {
             try
             {
+                State.Port = options.Port;
                 var builder = Host.CreateDefaultBuilder(new string[]
                 {
                         "--e ASPNETCORE_ENVIRONMENT=\"Development\"",
@@ -62,10 +64,11 @@ namespace MockupServer
         {
             try
             {
+                State.Port = int.Parse(ArgumentsUtils.GetValue(args, "Port"));
                 var builder = Host.CreateDefaultBuilder(new string[]
                 {
                         "--e ASPNETCORE_ENVIRONMENT=\"Development\"",
-                        $"--urls=http://localhost:{ArgumentsUtils.GetValue(args, "Port")}"
+                        $"--urls=http://*:{State.Port};https://*:{State.Port+1}"
                 });
                 builder.ConfigureAppConfiguration((config) =>
                 {

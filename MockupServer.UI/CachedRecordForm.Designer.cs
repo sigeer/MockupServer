@@ -37,6 +37,7 @@
             TxtFilter = new TextBox();
             BtnSearch = new Button();
             BtnAdd = new Button();
+            MenuItem_CopyUrl = new ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)DataGridViewMain).BeginInit();
             MenuData.SuspendLayout();
             SuspendLayout();
@@ -56,21 +57,21 @@
             // 
             // MenuData
             // 
-            MenuData.Items.AddRange(new ToolStripItem[] { MenuEdit, MenuDelete });
+            MenuData.Items.AddRange(new ToolStripItem[] { MenuEdit, MenuDelete, MenuItem_CopyUrl });
             MenuData.Name = "MenuData";
-            MenuData.Size = new Size(101, 48);
+            MenuData.Size = new Size(181, 92);
             // 
             // MenuEdit
             // 
             MenuEdit.Name = "MenuEdit";
-            MenuEdit.Size = new Size(100, 22);
+            MenuEdit.Size = new Size(180, 22);
             MenuEdit.Text = "编辑";
             MenuEdit.Click += MenuEdit_Click;
             // 
             // MenuDelete
             // 
             MenuDelete.Name = "MenuDelete";
-            MenuDelete.Size = new Size(100, 22);
+            MenuDelete.Size = new Size(180, 22);
             MenuDelete.Text = "删除";
             MenuDelete.Click += MenuDelete_Click;
             // 
@@ -111,6 +112,13 @@
             BtnAdd.UseVisualStyleBackColor = true;
             BtnAdd.Click += BtnAdd_Click;
             // 
+            // MenuItem_CopyUrl
+            // 
+            MenuItem_CopyUrl.Name = "MenuItem_CopyUrl";
+            MenuItem_CopyUrl.Size = new Size(180, 22);
+            MenuItem_CopyUrl.Text = "复制请求URL";
+            MenuItem_CopyUrl.Click += MenuItem_CopyUrl_Click;
+            // 
             // CachedRecordForm
             // 
             AutoScaleDimensions = new SizeF(7F, 17F);
@@ -141,5 +149,6 @@
         private ContextMenuStrip MenuData;
         private ToolStripMenuItem MenuEdit;
         private ToolStripMenuItem MenuDelete;
+        private ToolStripMenuItem MenuItem_CopyUrl;
     }
 }
