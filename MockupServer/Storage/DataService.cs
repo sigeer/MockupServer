@@ -87,9 +87,17 @@ namespace MockupServer.Storage
             return new HttpResponseMessage(HttpStatusCode.OK) { Content = fakeContent };
         }
 
-        public async Task InserOrUpdateRecord(string url, string method,  int type, string res)
+        public async Task InserOrUpdateRecord(string url, string method, int type, string res)
         {
-            await _freeSql.InsertOrUpdate<MockupObject>().SetSource(new MockupObject(url, method, type, res)).ExecuteAffrowsAsync();
+            var model = new MockupObject(url, method, type, res);
+
+            var sameItem = await _freeSql.Select<MockupObject>().Where<MockupObject>(x => x.RequestUrl == model.RequestUrl && x.Method == model.Method).ToOneAsync();
+            if (sameItem == null)
+                await _freeSql.Insert<MockupObject>(model).ExecuteAffrowsAsync();
+            else
+                await _freeSql.Update<MockupObject>().Where(x => x.RequestUrl == model.RequestUrl && x.Method == model.Method)
+                    .Set(x => x.ResponseData, model.ResponseData)
+                    .Set(x => x.ResponseType, model.ResponseType).ExecuteAffrowsAsync();
         }
 
         public async Task DeleteRecordAsync(string url, string method)
