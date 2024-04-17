@@ -1,4 +1,6 @@
 ﻿using ICSharpCode.TextEditor;
+using ICSharpCode.TextEditor.Document;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 
 namespace MockupServer.UI
 {
@@ -18,6 +20,8 @@ namespace MockupServer.UI
             // 将 TextEditor 控件添加到窗体中
             Panel_Editor.Controls.Add(textEditorControl);
 
+            textEditorControl.Document.FoldingManager.FoldingStrategy = new MingFolding();
+            textEditorControl.TextChanged += TextEditor_TextChanged;
             textEditorControl.Text = content;
         }
 
@@ -30,6 +34,11 @@ namespace MockupServer.UI
         {
             OnSubmit?.Invoke(sender, textEditorControl.Text);
             Close();
+        }
+
+        private void TextEditor_TextChanged(object? sender, EventArgs e)
+        {
+            textEditorControl.Document.FoldingManager.UpdateFoldings(null, null);
         }
     }
 }

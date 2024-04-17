@@ -39,7 +39,7 @@
             Btn_Submit.Name = "Btn_Submit";
             Btn_Submit.Size = new Size(75, 23);
             Btn_Submit.TabIndex = 0;
-            Btn_Submit.Text = "保存";
+            Btn_Submit.Text = "确定";
             Btn_Submit.UseVisualStyleBackColor = true;
             Btn_Submit.Click += Btn_Submit_Click;
             // 
