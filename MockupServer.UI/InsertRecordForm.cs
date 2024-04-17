@@ -33,7 +33,7 @@ namespace MockupServer.UI
             {
                 try
                 {
-                    var obj = JsonConvert.DeserializeObject<object>(TxtBody.Text ?? "");
+                    var obj = JsonConvert.DeserializeObject<object>(model.ResponseData ?? "");
                     if (obj == null)
                     {
                         MessageBox.Show("body应当是一个json对象");
@@ -46,7 +46,7 @@ namespace MockupServer.UI
                     return;
                 }
             }
-            await _dataService.InserOrUpdateRecord(TxtUrl.Text, ComboBox_Method.Text, (int)ComboBox_Type.SelectedValue, TxtBody.Text);
+            await _dataService.InserOrUpdateRecord(TxtUrl.Text, ComboBox_Method.Text, (int)ComboBox_Type.SelectedValue, model.ResponseData);
             Close();
         }
 
@@ -58,7 +58,6 @@ namespace MockupServer.UI
         private void InsertRecordForm_Load(object sender, EventArgs e)
         {
             TxtUrl.Text = model.RequestUrl;
-            TxtBody.Text = model.ResponseData;
 
             ComboBox_Type.DataSource = new List<KeyValuePair<string, int>>()
             {
@@ -70,6 +69,19 @@ namespace MockupServer.UI
             };
             ComboBox_Type.ValueMember = "Value";
             ComboBox_Type.DisplayMember = "Key";
+
+            ComboBox_Method.SelectedItem = model.Method;
+            ComboBox_Type.SelectedValue = model.ResponseType;
+        }
+
+        private void Btn_Edit_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            var form = new EditorForm(model.ResponseData);
+            form.OnSubmit += (obj, content) =>
+            {
+                model.ResponseData = content;
+            };
+            form.ShowDialog();
         }
     }
 }
