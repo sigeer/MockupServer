@@ -97,7 +97,7 @@
             label3.Name = "label3";
             label3.Size = new Size(284, 44);
             label3.TabIndex = 6;
-            label3.Text = "请求会优先使用假数据，如果没有则转发至目标服务器。";
+            label3.Text = "请求会优先使用模拟数据，如果没有则转发至目标服务器。";
             // 
             // BtnMockupDataForm
             // 
@@ -122,6 +122,7 @@
             Controls.Add(label2);
             Controls.Add(TxtPort);
             Controls.Add(label1);
+            MaximizeBox = false;
             Name = "Form1";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "测试数据服务器";
