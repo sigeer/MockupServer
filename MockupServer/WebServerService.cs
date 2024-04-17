@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
 using MockupServer.Configs;
 using Serilog;
 using Serilog.Events;
@@ -18,12 +17,9 @@ namespace MockupServer
             try
             {
                 State.Port = options.Port;
-                var builder = Host.CreateDefaultBuilder(new string[]
-                {
-                        "--e ASPNETCORE_ENVIRONMENT=\"Development\"",
-                        $"--urls=http://*:{options.Port};https://*:{options.Port+1};"
-                });
+                var builder = Host.CreateDefaultBuilder();
 
+                builder.UseEnvironment(Environments.Staging);
                 builder.ConfigureAppConfiguration((hostingContext, config) =>
                 {
                     config.AddJsonFile("appsettings.json", optional: true);
@@ -46,7 +42,11 @@ namespace MockupServer
 
                 builder = builder.ConfigureWebHostDefaults(x =>
                 {
-                    x.UseKestrel().UseStartup<Startup>();
+                    x.UseUrls(new string[]
+                    {
+                        $"http://*:{options.Port}",
+                        $"https://*:{options.Port+1}"
+                    }).UseStartup<Startup>();
                 });
 
 
@@ -64,58 +64,12 @@ namespace MockupServer
         {
             try
             {
-                State.Port = int.Parse(ArgumentsUtils.GetValue(args, "Port"));
-                var builder = Host.CreateDefaultBuilder(new string[]
+                var options = new ServerOptions()
                 {
-                        "--e ASPNETCORE_ENVIRONMENT=\"Development\"",
-                        $"--urls=http://*:{State.Port};https://*:{State.Port+1}"
-                });
-                builder.ConfigureAppConfiguration((config) =>
-                {
-                    config.AddJsonFile("appsettings.json", optional: true);
-                    config.AddCommandLine(args);
-                });
-
-                builder.UseSerilog((context, config) =>
-                {
-                    //config.ReadFrom.Configuration(configuration);
-                    config.Enrich.FromLogContext()
-                        .MinimumLevel.Debug()
-                        .MinimumLevel.Override("System", LogEventLevel.Warning)
-                        .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-                        .WriteTo.Console()
-                        .WriteTo.Async(a => a.File("logs/All-.txt", rollingInterval: RollingInterval.Day))
-                    .WriteTo.Logger(lg => lg.Filter.ByIncludingOnly(p => p.Level == LogEventLevel.Debug).WriteTo.Async(
-                        a => a.File("logs/Debug-.txt", rollingInterval: RollingInterval.Day)
-                    ))
-                    .WriteTo.Logger(lg => lg.Filter.ByIncludingOnly(p => p.Level == LogEventLevel.Information).WriteTo.Async(
-                        a => a.File("logs/Info-.txt", rollingInterval: RollingInterval.Day)
-                    ))
-                    .WriteTo.Logger(lg => lg.Filter.ByIncludingOnly(p => p.Level == LogEventLevel.Warning).WriteTo.Async(
-                        a => a.File("logs/Warning-.txt", rollingInterval: RollingInterval.Day)
-                    ))
-                    .WriteTo.Logger(lg => lg.Filter.ByIncludingOnly(p => p.Level == LogEventLevel.Error).WriteTo.Async(
-                        a => a.File("logs/Error-.txt", rollingInterval: RollingInterval.Day)
-                    ))
-                    .WriteTo.Logger(lg => lg.Filter.ByIncludingOnly(p => p.Level == LogEventLevel.Fatal).WriteTo.Async(
-                        a => a.File("logs/Fatal-.txt", rollingInterval: RollingInterval.Day)
-                    ));
-                });
-
-                builder = builder.ConfigureWebHostDefaults(x =>
-                {
-                    x.ConfigureServices((builderContext, services) =>
-                    {
-                        var options = builderContext.Configuration.Get<ServerOptions>();
-                        services.AddSingleton<ServerOptions>(options);
-                    });
-                    x.UseKestrel().UseStartup<Startup>();
-                });
-
-
-                var app = builder.Build();
-
-                return app;
+                    Port = int.Parse(ArgumentsUtils.GetValue(args, "Port")),
+                    OriginalServiceUrl = ArgumentsUtils.GetValue(args, "Url")
+                };
+                return Create(options);
             }
             catch (Exception ex)
             {
