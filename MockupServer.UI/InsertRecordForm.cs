@@ -76,7 +76,7 @@ namespace MockupServer.UI
 
         private void Btn_Edit_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            var form = new EditorForm(model.ResponseData);
+            var form = new EditorForm(model.ResponseData, (ResponseType)ComboBox_Type.SelectedValue);
             form.OnSubmit += (obj, content) =>
             {
                 model.ResponseData = content;

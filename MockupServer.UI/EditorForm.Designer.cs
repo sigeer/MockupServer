@@ -31,6 +31,7 @@
             Btn_Submit = new Button();
             Btn_Cancel = new Button();
             Panel_Editor = new Panel();
+            Btn_Formatter = new Button();
             SuspendLayout();
             // 
             // Btn_Submit
@@ -60,11 +61,22 @@
             Panel_Editor.Size = new Size(802, 409);
             Panel_Editor.TabIndex = 2;
             // 
+            // Btn_Formatter
+            // 
+            Btn_Formatter.Location = new Point(499, 415);
+            Btn_Formatter.Name = "Btn_Formatter";
+            Btn_Formatter.Size = new Size(127, 23);
+            Btn_Formatter.TabIndex = 3;
+            Btn_Formatter.Text = "格式化";
+            Btn_Formatter.UseVisualStyleBackColor = true;
+            Btn_Formatter.Click += Btn_Formatter_Click;
+            // 
             // EditorForm
             // 
             AutoScaleDimensions = new SizeF(7F, 17F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(Btn_Formatter);
             Controls.Add(Panel_Editor);
             Controls.Add(Btn_Cancel);
             Controls.Add(Btn_Submit);
@@ -78,5 +90,6 @@
         private Button Btn_Submit;
         private Button Btn_Cancel;
         private Panel Panel_Editor;
+        private Button Btn_Formatter;
     }
 }
