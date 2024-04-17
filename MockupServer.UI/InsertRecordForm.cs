@@ -76,7 +76,17 @@ namespace MockupServer.UI
 
         private void Btn_Edit_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            var form = new EditorForm(model.ResponseData, (ResponseType)ComboBox_Type.SelectedValue);
+            var selectedType = (ResponseType)ComboBox_Type.SelectedValue;
+            if (selectedType == ResponseType.File)
+            {
+                var ofd = new OpenFileDialog();
+                if (ofd.ShowDialog() == DialogResult.OK)
+                {
+                    model.ResponseData = ofd.FileName;
+                }
+                return;
+            }
+            var form = new EditorForm(model.ResponseData, selectedType);
             form.OnSubmit += (obj, content) =>
             {
                 model.ResponseData = content;
