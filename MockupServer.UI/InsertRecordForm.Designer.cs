@@ -28,85 +28,128 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.label1 = new System.Windows.Forms.Label();
-            this.TxtUrl = new System.Windows.Forms.TextBox();
-            this.label2 = new System.Windows.Forms.Label();
-            this.TxtBody = new System.Windows.Forms.TextBox();
-            this.BtnSave = new System.Windows.Forms.Button();
-            this.BtnCancel = new System.Windows.Forms.Button();
-            this.SuspendLayout();
+            label1 = new Label();
+            TxtUrl = new TextBox();
+            label2 = new Label();
+            TxtBody = new TextBox();
+            BtnSave = new Button();
+            BtnCancel = new Button();
+            label3 = new Label();
+            ComboBox_Type = new ComboBox();
+            label4 = new Label();
+            ComboBox_Method = new ComboBox();
+            SuspendLayout();
             // 
             // label1
             // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(12, 26);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(25, 17);
-            this.label1.TabIndex = 0;
-            this.label1.Text = "Url";
+            label1.AutoSize = true;
+            label1.Location = new Point(12, 26);
+            label1.Name = "label1";
+            label1.Size = new Size(25, 17);
+            label1.TabIndex = 0;
+            label1.Text = "Url";
             // 
             // TxtUrl
             // 
-            this.TxtUrl.Location = new System.Drawing.Point(61, 23);
-            this.TxtUrl.Name = "TxtUrl";
-            this.TxtUrl.Size = new System.Drawing.Size(508, 23);
-            this.TxtUrl.TabIndex = 1;
+            TxtUrl.Location = new Point(75, 23);
+            TxtUrl.Name = "TxtUrl";
+            TxtUrl.Size = new Size(494, 23);
+            TxtUrl.TabIndex = 1;
             // 
             // label2
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(12, 68);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(38, 17);
-            this.label2.TabIndex = 2;
-            this.label2.Text = "Body";
+            label2.AutoSize = true;
+            label2.Location = new Point(12, 117);
+            label2.Name = "label2";
+            label2.Size = new Size(56, 17);
+            label2.TabIndex = 2;
+            label2.Text = "返回数据";
             // 
             // TxtBody
             // 
-            this.TxtBody.Location = new System.Drawing.Point(61, 68);
-            this.TxtBody.Multiline = true;
-            this.TxtBody.Name = "TxtBody";
-            this.TxtBody.Size = new System.Drawing.Size(508, 210);
-            this.TxtBody.TabIndex = 3;
+            TxtBody.Location = new Point(75, 114);
+            TxtBody.Multiline = true;
+            TxtBody.Name = "TxtBody";
+            TxtBody.ScrollBars = ScrollBars.Vertical;
+            TxtBody.Size = new Size(494, 236);
+            TxtBody.TabIndex = 3;
             // 
             // BtnSave
             // 
-            this.BtnSave.Location = new System.Drawing.Point(402, 289);
-            this.BtnSave.Name = "BtnSave";
-            this.BtnSave.Size = new System.Drawing.Size(75, 23);
-            this.BtnSave.TabIndex = 4;
-            this.BtnSave.Text = "保存";
-            this.BtnSave.UseVisualStyleBackColor = true;
-            this.BtnSave.Click += new System.EventHandler(this.BtnSave_Click);
+            BtnSave.Location = new Point(413, 356);
+            BtnSave.Name = "BtnSave";
+            BtnSave.Size = new Size(75, 23);
+            BtnSave.TabIndex = 4;
+            BtnSave.Text = "保存";
+            BtnSave.UseVisualStyleBackColor = true;
+            BtnSave.Click += BtnSave_Click;
             // 
             // BtnCancel
             // 
-            this.BtnCancel.Location = new System.Drawing.Point(494, 289);
-            this.BtnCancel.Name = "BtnCancel";
-            this.BtnCancel.Size = new System.Drawing.Size(75, 23);
-            this.BtnCancel.TabIndex = 5;
-            this.BtnCancel.Text = "取消";
-            this.BtnCancel.UseVisualStyleBackColor = true;
-            this.BtnCancel.Click += new System.EventHandler(this.BtnCancel_Click);
+            BtnCancel.Location = new Point(494, 356);
+            BtnCancel.Name = "BtnCancel";
+            BtnCancel.Size = new Size(75, 23);
+            BtnCancel.TabIndex = 5;
+            BtnCancel.Text = "取消";
+            BtnCancel.UseVisualStyleBackColor = true;
+            BtnCancel.Click += BtnCancel_Click;
+            // 
+            // label3
+            // 
+            label3.AutoSize = true;
+            label3.Location = new Point(12, 86);
+            label3.Name = "label3";
+            label3.Size = new Size(56, 17);
+            label3.TabIndex = 6;
+            label3.Text = "返回类型";
+            // 
+            // ComboBox_Type
+            // 
+            ComboBox_Type.FormattingEnabled = true;
+            ComboBox_Type.Location = new Point(75, 83);
+            ComboBox_Type.Name = "ComboBox_Type";
+            ComboBox_Type.Size = new Size(180, 25);
+            ComboBox_Type.TabIndex = 7;
+            // 
+            // label4
+            // 
+            label4.AutoSize = true;
+            label4.Location = new Point(12, 55);
+            label4.Name = "label4";
+            label4.Size = new Size(56, 17);
+            label4.TabIndex = 8;
+            label4.Text = "请求方式";
+            // 
+            // ComboBox_Method
+            // 
+            ComboBox_Method.FormattingEnabled = true;
+            ComboBox_Method.Items.AddRange(new object[] { "GET", "POST", "PUT", "DELETE" });
+            ComboBox_Method.Location = new Point(75, 52);
+            ComboBox_Method.Name = "ComboBox_Method";
+            ComboBox_Method.Size = new Size(181, 25);
+            ComboBox_Method.TabIndex = 9;
             // 
             // InsertRecordForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 17F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(605, 324);
-            this.Controls.Add(this.BtnCancel);
-            this.Controls.Add(this.BtnSave);
-            this.Controls.Add(this.TxtBody);
-            this.Controls.Add(this.label2);
-            this.Controls.Add(this.TxtUrl);
-            this.Controls.Add(this.label1);
-            this.Name = "InsertRecordForm";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "InsertRecordForm";
-            this.Load += new System.EventHandler(this.InsertRecordForm_Load);
-            this.ResumeLayout(false);
-            this.PerformLayout();
-
+            AutoScaleDimensions = new SizeF(7F, 17F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(605, 391);
+            Controls.Add(ComboBox_Method);
+            Controls.Add(label4);
+            Controls.Add(ComboBox_Type);
+            Controls.Add(label3);
+            Controls.Add(BtnCancel);
+            Controls.Add(BtnSave);
+            Controls.Add(TxtBody);
+            Controls.Add(label2);
+            Controls.Add(TxtUrl);
+            Controls.Add(label1);
+            Name = "InsertRecordForm";
+            StartPosition = FormStartPosition.CenterScreen;
+            Text = "InsertRecordForm";
+            Load += InsertRecordForm_Load;
+            ResumeLayout(false);
+            PerformLayout();
         }
 
         #endregion
@@ -117,5 +160,9 @@
         private TextBox TxtBody;
         private Button BtnSave;
         private Button BtnCancel;
+        private Label label3;
+        private ComboBox ComboBox_Type;
+        private Label label4;
+        private ComboBox ComboBox_Method;
     }
 }

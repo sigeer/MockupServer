@@ -3,9 +3,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using MockupServer.Configs;
-using MockupServer.Utils;
 using Serilog;
 using Serilog.Events;
+using Utility.Common;
+using Utility.Serilog.Extension;
 
 namespace MockupServer
 {
@@ -33,23 +34,7 @@ namespace MockupServer
                         .MinimumLevel.Debug()
                         .MinimumLevel.Override("System", LogEventLevel.Warning)
                         .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-                        .WriteTo.Console()
-                        .WriteTo.Async(a => a.File("logs/All-.txt", rollingInterval: RollingInterval.Day))
-                    .WriteTo.Logger(lg => lg.Filter.ByIncludingOnly(p => p.Level == LogEventLevel.Debug).WriteTo.Async(
-                        a => a.File("logs/Debug-.txt", rollingInterval: RollingInterval.Day)
-                    ))
-                    .WriteTo.Logger(lg => lg.Filter.ByIncludingOnly(p => p.Level == LogEventLevel.Information).WriteTo.Async(
-                        a => a.File("logs/Info-.txt", rollingInterval: RollingInterval.Day)
-                    ))
-                    .WriteTo.Logger(lg => lg.Filter.ByIncludingOnly(p => p.Level == LogEventLevel.Warning).WriteTo.Async(
-                        a => a.File("logs/Warning-.txt", rollingInterval: RollingInterval.Day)
-                    ))
-                    .WriteTo.Logger(lg => lg.Filter.ByIncludingOnly(p => p.Level == LogEventLevel.Error).WriteTo.Async(
-                        a => a.File("logs/Error-.txt", rollingInterval: RollingInterval.Day)
-                    ))
-                    .WriteTo.Logger(lg => lg.Filter.ByIncludingOnly(p => p.Level == LogEventLevel.Fatal).WriteTo.Async(
-                        a => a.File("logs/Fatal-.txt", rollingInterval: RollingInterval.Day)
-                    ));
+                        .CustomWriteTo();
                 });
 
                 builder.ConfigureServices(services =>

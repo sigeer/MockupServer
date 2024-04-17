@@ -1,3 +1,10 @@
+using FreeSql;
+using Microsoft.Extensions.DependencyInjection;
+using MockupServer.Storage;
+using Serilog;
+using Serilog.Events;
+using Utility.Serilog.Extension;
+
 namespace MockupServer.UI
 {
     internal static class Program
@@ -12,7 +19,15 @@ namespace MockupServer.UI
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
 
-            Application.Run(new Form1());
+
+            ServiceCollection services = new ServiceCollection();
+
+            services.AddMockupBaseService();
+            services.AddSingleton<Form1>();
+
+            var serviceProvider = services.BuildServiceProvider();
+            var form = serviceProvider.GetService<Form1>()!;
+            Application.Run(form);
         }
     }
 }

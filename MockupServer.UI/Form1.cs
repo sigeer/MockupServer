@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MockupServer.Configs;
+using MockupServer.Storage;
 using Newtonsoft.Json;
 
 namespace MockupServer.UI
@@ -12,26 +13,27 @@ namespace MockupServer.UI
     {
         ILogger<Form1> _logger;
         IHost? _webApp;
-        public Form1()
+        DataService _dataService;
+        public Form1(ILogger<Form1> logger, DataService dataService)
         {
+            _logger = logger;
+            _dataService = dataService;
+
             InitializeComponent();
             SetFormStatus(false);
         }
 
         private void BtnMockupDataForm_Click(object sender, EventArgs e)
         {
-            if (_webApp != null)
-            {
-                var form = new CachedRecordForm( _webApp);
-                form.ShowDialog();
-            }
+            var form = new CachedRecordForm(_dataService);
+            form.ShowDialog();
         }
 
         private void BtnStart_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrEmpty(TxtServer.Text) 
-                || TxtServer.Text.EndsWith("/") 
-                || string.IsNullOrEmpty(TxtPort.Text) 
+            if (string.IsNullOrEmpty(TxtServer.Text)
+                || TxtServer.Text.EndsWith("/")
+                || string.IsNullOrEmpty(TxtPort.Text)
                 || !int.TryParse(TxtPort.Text, out int port))
             {
                 MessageBox.Show("请完成所有内容");
@@ -42,7 +44,7 @@ namespace MockupServer.UI
             {
                 try
                 {
-                    BeginInvoke(() =>
+                    Invoke(() =>
                     {
                         BtnStart.Enabled = false;
                     });
@@ -58,7 +60,7 @@ namespace MockupServer.UI
                 }
                 catch (Exception ex)
                 {
-                    BeginInvoke(() =>
+                    Invoke(() =>
                     {
                         BtnStart.Enabled = true;
                     });
@@ -98,7 +100,7 @@ namespace MockupServer.UI
         {
             Task.Run(async () =>
             {
-               await ReadCacheData();
+                await ReadCacheData();
             });
         }
 
@@ -111,7 +113,7 @@ namespace MockupServer.UI
                 if (!string.IsNullOrEmpty(configStr))
                 {
                     var configs = JsonConvert.DeserializeObject<ServerOptions>(configStr);
-                    if (configs!= null)
+                    if (configs != null)
                     {
                         BeginInvoke(() =>
                         {
@@ -130,19 +132,11 @@ namespace MockupServer.UI
 
             TxtPort.Enabled = !isStarted;
             TxtServer.Enabled = !isStarted;
-
-            BtnMockupDataForm.Enabled = isStarted;
         }
 
         private void TxtHost_Leave(object sender, EventArgs e)
         {
             //GerateUrlPrefix();
-        }
-
-        private void BtnStartRecord_Click(object sender, EventArgs e)
-        {
-            var nowState = State.ToggleRecord();
-            BtnStartRecord.Text = nowState ? "停止录制" : "开始录制";
         }
 
         //private void GerateUrlPrefix()
