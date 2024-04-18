@@ -2,6 +2,7 @@
 using MockupServer.Response;
 using MockupServer.Storage;
 using Newtonsoft.Json;
+using Utility.Extensions;
 
 namespace MockupServer.UI
 {
@@ -73,11 +74,12 @@ namespace MockupServer.UI
 
             ComboBox_Type.DataSource = new List<KeyValuePair<string, int>>()
             {
-                new KeyValuePair<string, int>("空", (int)ResponseType.Empty),
-                new KeyValuePair<string, int>("Json对象", (int)ResponseType.JsonObject),
-                new KeyValuePair<string, int>("文本", (int)ResponseType.Text),
-                new KeyValuePair<string, int>("文件", (int)ResponseType.File),
-                new KeyValuePair<string, int>("Xml对象", (int)ResponseType.XmlObject),
+                new KeyValuePair<string, int>(ResponseType.Empty.GetDescription(), (int)ResponseType.Empty),
+                new KeyValuePair<string, int>(ResponseType.JsonObject.GetDescription(), (int)ResponseType.JsonObject),
+                new KeyValuePair<string, int>(ResponseType.Text.GetDescription(), (int)ResponseType.Text),
+                new KeyValuePair<string, int>(ResponseType.File.GetDescription(), (int)ResponseType.File),
+                new KeyValuePair<string, int>(ResponseType.XmlObject.GetDescription(), (int)ResponseType.XmlObject),
+                new KeyValuePair<string, int>(ResponseType.Redirect.GetDescription(), (int)ResponseType.Redirect),
             };
             ComboBox_Type.ValueMember = "Value";
             ComboBox_Type.DisplayMember = "Key";

@@ -81,6 +81,10 @@ namespace MockupServer.Storage
 
                     fakeContent = new StringContent(xmlDoc.InnerXml, xmlContentType);
                     break;
+                case ResponseType.Redirect:
+                    var msg = new HttpResponseMessage(HttpStatusCode.Redirect);
+                    msg.Headers.Location = new Uri(content);
+                    return msg;
                 default:
                     var errorMsg = $"不正常的ResponseType={type}";
                     throw new Exception(errorMsg);
