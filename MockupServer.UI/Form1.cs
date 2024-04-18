@@ -33,7 +33,7 @@ namespace MockupServer.UI
                 || string.IsNullOrEmpty(TxtPort.Text)
                 || !int.TryParse(TxtPort.Text, out int port))
             {
-                MessageBox.Show("请完成所有内容");
+                Alert.Show("请完成所有内容");
                 return;
             }
 
@@ -51,7 +51,7 @@ namespace MockupServer.UI
                     State.IsRunning = true;
                     BeginInvoke(() =>
                     {
-                        MessageBox.Show("服务器已启动");
+                        Alert.Show("服务器已启动");
                         SetFormStatus(true);
                     });
                 }
@@ -64,8 +64,7 @@ namespace MockupServer.UI
                     _logger.LogError(ex.ToString());
                     _webApp!.Dispose();
                     State.IsRunning = false;
-                    var err = ex.ToString();
-                    MessageBox.Show(err.Length >= 200 ? err.Substring(0, 200) : err);
+                    Alert.Show(ex.ToString());
                 }
             });
 
@@ -89,8 +88,9 @@ namespace MockupServer.UI
             {
                 await _webApp.StopAsync();
                 _webApp.Dispose();
+                _webApp = null;
                 State.IsRunning = false;
-                MessageBox.Show("服务器已停止");
+                Alert.Show("服务器已停止");
                 SetFormStatus(false);
             }
         }

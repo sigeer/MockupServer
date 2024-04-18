@@ -1,8 +1,10 @@
 ﻿using ICSharpCode.TextEditor;
+using ICSharpCode.TextEditor.Document;
 using MockupServer.Response;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Xml;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 
 namespace MockupServer.UI
 {
@@ -29,19 +31,34 @@ namespace MockupServer.UI
             textEditorControl.TextChanged += TextEditor_TextChanged;
             textEditorControl.Text = content;
 
+            InitializeHighLighting();
+
             if (_type == ResponseType.JsonObject)
             {
                 Btn_Formatter.Text = "格式化（Json）";
                 Btn_Formatter.Visible = true;
+                textEditorControl.SetHighlighting("JSON");
             }
             else if (_type == ResponseType.XmlObject)
             {
                 Btn_Formatter.Text = "格式化（Xml）";
                 Btn_Formatter.Visible = true;
+                textEditorControl.SetHighlighting("XML");
             }
             else
             {
                 Btn_Formatter.Visible = false;
+            }
+        }
+
+        private void InitializeHighLighting()
+        {
+            string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "HighLighting");
+            if (Directory.Exists(path))
+            {
+                var fsmp = new FileSyntaxModeProvider(path);
+                HighlightingManager.Manager.AddSyntaxModeFileProvider(fsmp);
+                // 更多高亮配置：https://github.com/xv/ICSharpCode.TextEditor-Lexers/tree/master/Syntax
             }
         }
 
@@ -98,7 +115,7 @@ namespace MockupServer.UI
                         // 设置缩进
                         Indent = true,
                         OmitXmlDeclaration = true,
-                        IndentChars = "   " // 设置缩进字符为四个空格
+                        IndentChars = "    " // 设置缩进字符为四个空格
                     };
 
                     // 使用 XmlWriter 将 XmlDocument 对象写入到内存流中
