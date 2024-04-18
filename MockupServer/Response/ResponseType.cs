@@ -13,6 +13,8 @@ namespace MockupServer.Response
         [Description("文件")]
         File,
         [Description("Xml对象")]
-        XmlObject
+        XmlObject,
+        [Description("转发")]
+        Redirect
     }
 }

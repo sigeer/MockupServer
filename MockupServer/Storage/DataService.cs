@@ -26,9 +26,8 @@ namespace MockupServer.Storage
             var relativeUrl = requestMessage.RequestUri!.PathAndQuery;
             var method = requestMessage.Method.ToString();
 
-            var fullUrl = requestMessage.RequestUri.AbsoluteUri;
 
-            var data = await _freeSql.Select<MockupObject>().Where<MockupObject>(x => x.Method == method && (x.RequestUrl == fullUrl || x.RequestUrl == relativeUrl)).ToOneAsync();
+            var data = await _freeSql.Select<MockupObject>().Where<MockupObject>(x => x.Method == method && x.RequestUrl == relativeUrl).ToOneAsync();
             if (data == null)
                 return null;
 
@@ -82,6 +81,10 @@ namespace MockupServer.Storage
 
                     fakeContent = new StringContent(xmlDoc.InnerXml, xmlContentType);
                     break;
+                case ResponseType.Redirect:
+                    var msg = new HttpResponseMessage(HttpStatusCode.Redirect);
+                    msg.Headers.Location = new Uri(content);
+                    return msg;
                 default:
                     var errorMsg = $"不正常的ResponseType={type}";
                     throw new Exception(errorMsg);
