@@ -96,6 +96,7 @@
             // 
             // ComboBox_Type
             // 
+            ComboBox_Type.DropDownStyle = ComboBoxStyle.DropDownList;
             ComboBox_Type.FormattingEnabled = true;
             ComboBox_Type.Location = new Point(75, 83);
             ComboBox_Type.Name = "ComboBox_Type";
@@ -113,6 +114,7 @@
             // 
             // ComboBox_Method
             // 
+            ComboBox_Method.DropDownStyle = ComboBoxStyle.DropDownList;
             ComboBox_Method.FormattingEnabled = true;
             ComboBox_Method.Items.AddRange(new object[] { "GET", "POST", "PUT", "DELETE" });
             ComboBox_Method.Location = new Point(75, 52);
@@ -131,7 +133,7 @@
             Btn_Edit.Text = "编辑内容";
             Btn_Edit.LinkClicked += Btn_Edit_LinkClicked;
             // 
-            // InsertRecordForm
+            // DataEditForm
             // 
             AutoScaleDimensions = new SizeF(7F, 17F);
             AutoScaleMode = AutoScaleMode.Font;
@@ -146,7 +148,7 @@
             Controls.Add(label2);
             Controls.Add(TxtUrl);
             Controls.Add(label1);
-            Name = "InsertRecordForm";
+            Name = "DataEditForm";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "模拟数据 - 编辑";
             Load += InsertRecordForm_Load;
