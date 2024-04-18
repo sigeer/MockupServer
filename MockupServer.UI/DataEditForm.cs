@@ -5,11 +5,11 @@ using Newtonsoft.Json;
 
 namespace MockupServer.UI
 {
-    public partial class InsertRecordForm : Form
+    public partial class DataEditForm : Form
     {
         readonly DataService _dataService;
         readonly MockupObject model;
-        public InsertRecordForm(MockupObject defaultModel, DataService dataService)
+        public DataEditForm(MockupObject defaultModel, DataService dataService)
         {
             _dataService = dataService;
             model = defaultModel;

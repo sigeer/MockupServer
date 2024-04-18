@@ -22,7 +22,7 @@ namespace MockupServer.UI
 
         private void BtnMockupDataForm_Click(object sender, EventArgs e)
         {
-            var form = new CachedRecordForm(_dataService);
+            var form = new DataManageForm(_dataService);
             form.ShowDialog();
         }
 

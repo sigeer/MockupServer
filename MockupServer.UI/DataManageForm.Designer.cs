@@ -1,6 +1,6 @@
 ﻿namespace MockupServer.UI
 {
-    partial class CachedRecordForm
+    partial class DataManageForm
     {
         /// <summary>
         /// Required designer variable.

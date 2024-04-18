@@ -4,7 +4,6 @@ using MockupServer.Response;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Xml;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 
 namespace MockupServer.UI
 {
@@ -97,7 +96,7 @@ namespace MockupServer.UI
                     // 将 JObject 对象序列化为缩进后的 JSON 字符串
                     textEditorControl.Text = JsonConvert.SerializeObject(jsonObject, settings);
                 }
-                catch 
+                catch
                 {
                 }
             }

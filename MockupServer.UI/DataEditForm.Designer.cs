@@ -1,6 +1,6 @@
 ﻿namespace MockupServer.UI
 {
-    partial class InsertRecordForm
+    partial class DataEditForm
     {
         /// <summary>
         /// Required designer variable.
