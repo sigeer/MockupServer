@@ -133,12 +133,5 @@ namespace MockupServer.UI
         {
             //GerateUrlPrefix();
         }
-
-        //private void GerateUrlPrefix()
-        //{
-        //    var indexStart = TxtHost.Text.IndexOf('/');
-        //    if (indexStart > 0)
-        //        TxtUrlPrefix.Text = TxtHost.Text.Substring(indexStart, TxtHost.Text.Length - indexStart);
-        //}
     }
 }

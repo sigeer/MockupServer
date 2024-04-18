@@ -23,10 +23,12 @@ namespace MockupServer.Storage
 
         public async Task<HttpResponseMessage?> GetDataFromCache(HttpRequestMessage requestMessage)
         {
-            var url = requestMessage.RequestUri!.PathAndQuery;
+            var relativeUrl = requestMessage.RequestUri!.PathAndQuery;
             var method = requestMessage.Method.ToString();
 
-            var data = await _freeSql.Select<MockupObject>().Where<MockupObject>(x => x.RequestUrl == url && x.Method == method).ToOneAsync();
+            var fullUrl = requestMessage.RequestUri.AbsoluteUri;
+
+            var data = await _freeSql.Select<MockupObject>().Where<MockupObject>(x => x.Method == method && (x.RequestUrl == fullUrl || x.RequestUrl == relativeUrl)).ToOneAsync();
             if (data == null)
                 return null;
 
