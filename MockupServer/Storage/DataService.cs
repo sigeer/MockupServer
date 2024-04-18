@@ -26,9 +26,8 @@ namespace MockupServer.Storage
             var relativeUrl = requestMessage.RequestUri!.PathAndQuery;
             var method = requestMessage.Method.ToString();
 
-            var fullUrl = requestMessage.RequestUri.AbsoluteUri;
 
-            var data = await _freeSql.Select<MockupObject>().Where<MockupObject>(x => x.Method == method && (x.RequestUrl == fullUrl || x.RequestUrl == relativeUrl)).ToOneAsync();
+            var data = await _freeSql.Select<MockupObject>().Where<MockupObject>(x => x.Method == method && x.RequestUrl == relativeUrl).ToOneAsync();
             if (data == null)
                 return null;
 

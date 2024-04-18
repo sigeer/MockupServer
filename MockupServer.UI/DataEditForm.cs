@@ -24,7 +24,7 @@ namespace MockupServer.UI
                 return;
             }
 
-            if (!TxtUrl.Text.StartsWith('/') && !TxtUrl.Text.StartsWith("http"))
+            if (!TxtUrl.Text.StartsWith('/'))
             {
                 Alert.Show("Url要以\"/\"，或者\"http\"开头");
                 return;
