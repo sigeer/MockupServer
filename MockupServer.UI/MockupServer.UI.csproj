@@ -16,4 +16,16 @@
     <ProjectReference Include="..\MockupServer\MockupServer.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="HighLighting\JSON.xshd">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="HighLighting\XML.xshd">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="HighLighting\C#.xshd">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
