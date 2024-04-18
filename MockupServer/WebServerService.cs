@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -78,4 +79,25 @@ namespace MockupServer
             }
         }
     }
+
+    public static class IHostExtension
+    {
+        public static async Task StartServerAsync(this IHost? host, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(host);
+            await host.StartAsync(cancellationToken);
+            State.IsRunning = true;
+        }
+
+        public static async Task StopServerAysnc(this IHost? host, CancellationToken cancellationToken = default)
+        {
+            if (host == null)
+                return;
+
+            await host.StopAsync(cancellationToken);
+            host.Dispose();
+            State.IsRunning = false;
+        }
+    }
+
 }
