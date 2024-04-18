@@ -104,10 +104,13 @@ namespace MockupServer.UI
         private void MenuEdit_Click(object sender, EventArgs e)
         {
             var selectedRow = DataGridViewMain.Rows[DataGridViewMain.SelectedCells[0].RowIndex];
-            var url = selectedRow.Cells[0].Value.ToString();
-            var method = selectedRow.Cells[1].Value.ToString();
+            if (selectedRow == null)
+                return;
+
+            var url = selectedRow.Cells[0].Value.ToString()!;
+            var method = selectedRow.Cells[1].Value!.ToString()!;
             var type = (int)selectedRow.Cells[2].Value;
-            var responseData = selectedRow.Cells[3].Value.ToString();
+            var responseData = selectedRow.Cells[3].Value?.ToString();
             new DataEditForm(new MockupObject(url, method, type, responseData), _coreService).ShowDialog();
             LoadDataGridView();
         }
@@ -115,7 +118,10 @@ namespace MockupServer.UI
         private async void MenuDelete_Click(object sender, EventArgs e)
         {
             var selectedRow = DataGridViewMain.Rows[DataGridViewMain.SelectedCells[0].RowIndex];
-            await _coreService.DeleteRecordAsync(selectedRow.Cells[0].Value.ToString(), selectedRow.Cells[1].Value.ToString());
+            if (selectedRow == null)
+                return;
+
+            await _coreService.DeleteRecordAsync(selectedRow.Cells[0].Value.ToString()!, selectedRow.Cells[1].Value.ToString()!);
             LoadDataGridView();
         }
 
