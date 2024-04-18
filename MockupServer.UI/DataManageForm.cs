@@ -5,10 +5,10 @@ using Utility.Extensions;
 
 namespace MockupServer.UI
 {
-    public partial class CachedRecordForm : Form
+    public partial class DataManageForm : Form
     {
         readonly DataService _coreService;
-        public CachedRecordForm(DataService dataService)
+        public DataManageForm(DataService dataService)
         {
             _coreService = dataService;
             InitializeComponent();
@@ -23,7 +23,7 @@ namespace MockupServer.UI
 
         private void BtnAdd_Click(object sender, EventArgs e)
         {
-            var form = new InsertRecordForm(MockupObject.Empty(), _coreService);
+            var form = new DataEditForm(MockupObject.Empty(), _coreService);
             form.ShowDialog();
             LoadDataGridView();
         }
@@ -108,7 +108,7 @@ namespace MockupServer.UI
             var method = selectedRow.Cells[1].Value.ToString();
             var type = (int)selectedRow.Cells[2].Value;
             var responseData = selectedRow.Cells[3].Value.ToString();
-            new InsertRecordForm(new MockupObject(url, method, type, responseData), _coreService).ShowDialog();
+            new DataEditForm(new MockupObject(url, method, type, responseData), _coreService).ShowDialog();
             LoadDataGridView();
         }
 
