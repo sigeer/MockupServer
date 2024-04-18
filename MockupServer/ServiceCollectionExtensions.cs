@@ -15,10 +15,10 @@ namespace MockupServer
             var instance = new FreeSqlBuilder().UseConnectionString(DataType.Sqlite, "data source=database.db").Build();
             instance.Ado.ExecuteScalar("""
                 CREATE TABLE If Not Exists "MockupObject" (
-                  "RequestUrl" varchar(200) not null,
-                  "Method" varchar(20) not null,
+                  "RequestUrl" varchar(200) not null COLLATE NOCASE,
+                  "Method" varchar(20) not null COLLATE NOCASE,
                   "ResponseType" int not null,
-                  "ResponseData" varchar(5000)
+                  "ResponseData" Text
                 );
                 """);
             services.AddSingleton<IFreeSql>(instance);

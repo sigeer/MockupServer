@@ -18,15 +18,27 @@ namespace MockupServer.UI
 
         private async void BtnSave_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrEmpty(TxtUrl.Text) || !TxtUrl.Text.StartsWith('/') || TxtUrl.Text.EndsWith('/'))
+            if (string.IsNullOrWhiteSpace(TxtUrl.Text))
             {
-                MessageBox.Show("url要以/开头，结尾不能带/");
+                Alert.Show("请输入Url");
+                return;
+            }
+
+            if (!TxtUrl.Text.StartsWith('/') && !TxtUrl.Text.StartsWith("http"))
+            {
+                Alert.Show("Url要以\"/\"，或者\"http\"开头");
+                return;
+            }
+
+            if (TxtUrl.Text.EndsWith('/'))
+            {
+                Alert.Show("Url不能以\"/\"结尾");
                 return;
             }
 
             if (ComboBox_Type.SelectedValue == null)
             {
-                MessageBox.Show("请选择返回类型");
+                Alert.Show("请选择返回类型");
                 return;
             }
             if ((ResponseType)ComboBox_Type.SelectedValue == ResponseType.JsonObject)
@@ -36,13 +48,13 @@ namespace MockupServer.UI
                     var obj = JsonConvert.DeserializeObject<object>(model.ResponseData ?? "");
                     if (obj == null)
                     {
-                        MessageBox.Show("body应当是一个json对象");
+                        Alert.Show("body应当是一个json对象");
                         return;
                     }
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(ex.Message);
+                    Alert.Show(ex.Message);
                     return;
                 }
             }

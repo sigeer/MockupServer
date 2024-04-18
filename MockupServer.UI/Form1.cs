@@ -47,8 +47,7 @@ namespace MockupServer.UI
                     });
                     var options = await SaveAndReadOption();
                     _webApp = WebServerService.Create(options);
-                    await _webApp.StartAsync();
-                    State.IsRunning = true;
+                    await _webApp.StartServerAsync();
                     BeginInvoke(() =>
                     {
                         Alert.Show("服务器已启动");
@@ -62,8 +61,7 @@ namespace MockupServer.UI
                         BtnStart.Enabled = true;
                     });
                     _logger.LogError(ex.ToString());
-                    _webApp!.Dispose();
-                    State.IsRunning = false;
+                    await _webApp.StopServerAysnc();
                     Alert.Show(ex.ToString());
                 }
             });
@@ -86,10 +84,8 @@ namespace MockupServer.UI
         {
             if (_webApp != null)
             {
-                await _webApp.StopAsync();
-                _webApp.Dispose();
+                await _webApp.StopServerAysnc();
                 _webApp = null;
-                State.IsRunning = false;
                 Alert.Show("服务器已停止");
                 SetFormStatus(false);
             }
@@ -137,12 +133,5 @@ namespace MockupServer.UI
         {
             //GerateUrlPrefix();
         }
-
-        //private void GerateUrlPrefix()
-        //{
-        //    var indexStart = TxtHost.Text.IndexOf('/');
-        //    if (indexStart > 0)
-        //        TxtUrlPrefix.Text = TxtHost.Text.Substring(indexStart, TxtHost.Text.Length - indexStart);
-        //}
     }
 }
