@@ -72,15 +72,9 @@ namespace MockupServer.UI
         {
             TxtUrl.Text = model.RequestUrl;
 
-            ComboBox_Type.DataSource = new List<KeyValuePair<string, int>>()
-            {
-                new KeyValuePair<string, int>(ResponseType.Empty.GetDescription(), (int)ResponseType.Empty),
-                new KeyValuePair<string, int>(ResponseType.JsonObject.GetDescription(), (int)ResponseType.JsonObject),
-                new KeyValuePair<string, int>(ResponseType.Text.GetDescription(), (int)ResponseType.Text),
-                new KeyValuePair<string, int>(ResponseType.File.GetDescription(), (int)ResponseType.File),
-                new KeyValuePair<string, int>(ResponseType.XmlObject.GetDescription(), (int)ResponseType.XmlObject),
-                new KeyValuePair<string, int>(ResponseType.Redirect.GetDescription(), (int)ResponseType.Redirect),
-            };
+            var typeList = Enum.GetValues<ResponseType>();
+
+            ComboBox_Type.DataSource = typeList.Select(x => new KeyValuePair<string, int>(x.GetDescription(), (int)x)).ToList();
             ComboBox_Type.ValueMember = "Value";
             ComboBox_Type.DisplayMember = "Key";
 
@@ -90,7 +84,7 @@ namespace MockupServer.UI
 
         private void Btn_Edit_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            var selectedType = (ResponseType)ComboBox_Type.SelectedValue;
+            var selectedType = (ResponseType)ComboBox_Type.SelectedValue!;
             if (selectedType == ResponseType.File)
             {
                 var ofd = new OpenFileDialog();
