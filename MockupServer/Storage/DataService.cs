@@ -1,10 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
 using MockupServer.Models;
 using MockupServer.Response;
-using Newtonsoft.Json;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Mime;
+using System.Text.RegularExpressions;
 using System.Xml;
 using Utility.Extensions;
 
@@ -21,13 +21,38 @@ namespace MockupServer.Storage
             _logger = logger;
         }
 
-        public async Task<HttpResponseMessage?> GetDataFromCache(HttpRequestMessage requestMessage)
+        public async Task<List<Domain>> GetDomainList()
         {
-            var relativeUrl = requestMessage.RequestUri!.PathAndQuery;
-            var method = requestMessage.Method.ToString();
+            return await _freeSql.Select<Domain>().ToListAsync();
+        }
 
+        public async Task<Domain> InsertOrUpdateDomain(Domain model)
+        {
+            await _freeSql.InsertOrUpdate<Domain>().SetSource(model).ExecuteAffrowsAsync();
+            return model;
+        }
 
-            var data = await _freeSql.Select<MockupObject>().Where<MockupObject>(x => x.Method == method && x.RequestUrl == relativeUrl).ToOneAsync();
+        public async Task<GlobalCache> GetGlobal()
+        {
+            var model = await _freeSql.Select<GlobalCache>().ToOneAsync();
+            if (model == null)
+            {
+                model = new GlobalCache();
+                await _freeSql.Insert<GlobalCache>(model).ExecuteAffrowsAsync();
+            }
+            return model;
+        }
+
+        public async Task<GlobalCache> SaveGlobal(GlobalCache model)
+        {
+            var ds = await _freeSql.Update<GlobalCache>().WhereIf(true, x => true).Set(x => x.ListenerPort, model.ListenerPort).ExecuteAffrowsAsync();
+            return model;
+        }
+
+        public async Task<HttpResponseMessage?> GetDataFromCache(string method, string relativeUrl)
+        {
+            var list = await _freeSql.Select<MockupObject>().Where(x => x.Method == method).ToListAsync();
+            var data = list.FirstOrDefault(x => string.Compare(x.RequestUrl, relativeUrl, true) == 0 || Regex.IsMatch(relativeUrl, x.RequestUrl, RegexOptions.IgnoreCase));
             if (data == null)
                 return null;
 

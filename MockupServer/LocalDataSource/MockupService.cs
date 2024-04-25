@@ -1,5 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using MockupServer.Storage;
+using System.Net;
 
 namespace MockupServer.LocalDataSource
 {
@@ -30,14 +32,34 @@ namespace MockupServer.LocalDataSource
         }
 
 
-        public async Task<HttpResponseMessage?> GetResponseMessage(HttpRequestMessage httpRequestMessage)
+        public async Task<HttpResponseMessage?> GetResponseMessage(HttpContext context)
         {
             try
             {
-                var data = await _dataService.GetDataFromCache(httpRequestMessage);
-                if (data == null)
-                    data = await GetDataFromRemote(httpRequestMessage);
+                var relativeUrl = $"{context.Request.Path}{context.Request.QueryString}";
+                HttpResponseMessage? data = await _dataService.GetDataFromCache(context.Request.Method, relativeUrl);
+                if (data != null)
+                    return data;
+
+                var domainList = await _dataService.GetDomainList();
+                var effectiveData = domainList.Where(x =>
+                                        relativeUrl.StartsWith(x.UrlPrefix, StringComparison.OrdinalIgnoreCase)
+                                        && !string.IsNullOrWhiteSpace(x.Target)
+                                   ).OrderByDescending(x => x.UrlPrefix.Length)
+                                    .ToArray();
+                foreach (var item in effectiveData)
+                {
+                    var newUri = new Uri($"{item.Target}{relativeUrl}");
+                    var requestMessage = await RequestBody.GetHttpRequestMessage(context, newUri);
+                    data = await GetDataFromRemote(requestMessage);
+
+                    if (data != null)
+                        break;
+                }
+                data ??= new HttpResponseMessage(HttpStatusCode.NotFound);
                 return data;
+
+
             }
             catch (Exception ex)
             {

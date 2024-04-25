@@ -1,9 +1,8 @@
 ﻿using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using MockupServer.Configs;
+using MockupServer.Models;
 using Serilog;
 using Serilog.Events;
 using Utility.Common;
@@ -13,11 +12,11 @@ namespace MockupServer
 {
     public class WebServerService
     {
-        public static IHost Create(ServerOptions options)
+        public static IHost Create(GlobalCache options)
         {
             try
             {
-                State.Port = options.Port;
+                State.Port = options.ListenerPort;
                 var builder = Host.CreateDefaultBuilder();
 
                 builder.UseEnvironment(Environments.Staging);
@@ -38,15 +37,15 @@ namespace MockupServer
 
                 builder.ConfigureServices(services =>
                 {
-                    services.AddSingleton<ServerOptions>(options);
+                    services.AddSingleton<GlobalCache>(options);
                 });
 
                 builder = builder.ConfigureWebHostDefaults(x =>
                 {
                     x.UseUrls(new string[]
                     {
-                        $"http://*:{options.Port}",
-                        $"https://*:{options.Port+1}"
+                        $"http://*:{options.ListenerPort}",
+                        $"https://*:{options.ListenerPort+1}"
                     }).UseStartup<Startup>();
                 });
 
@@ -65,10 +64,9 @@ namespace MockupServer
         {
             try
             {
-                var options = new ServerOptions()
+                var options = new GlobalCache()
                 {
-                    Port = int.Parse(ArgumentsUtils.GetValue(args, "Port")),
-                    OriginalServiceUrl = ArgumentsUtils.GetValue(args, "Url")
+                    ListenerPort = int.Parse(ArgumentsUtils.GetValue(args, "Port")),
                 };
                 return Create(options);
             }

@@ -102,6 +102,7 @@
             ComboBox_Type.Name = "ComboBox_Type";
             ComboBox_Type.Size = new Size(180, 25);
             ComboBox_Type.TabIndex = 7;
+            ComboBox_Type.SelectedValueChanged += ComboBox_Type_SelectedValueChanged;
             // 
             // label4
             // 

@@ -27,13 +27,7 @@ namespace MockupServer.UI
 
             if (!TxtUrl.Text.StartsWith('/'))
             {
-                Alert.Show("Url要以\"/\"，或者\"http\"开头");
-                return;
-            }
-
-            if (TxtUrl.Text.EndsWith('/'))
-            {
-                Alert.Show("Url不能以\"/\"结尾");
+                Alert.Show("Url要以\"/\"开头");
                 return;
             }
 
@@ -74,12 +68,14 @@ namespace MockupServer.UI
 
             var typeList = Enum.GetValues<ResponseType>();
 
-            ComboBox_Type.DataSource = typeList.Select(x => new KeyValuePair<string, int>(x.GetDescription(), (int)x)).ToList();
+            /// 需要先设置Member， 再设置DataSouce --设置ValueMember，DataSource都会触发SelectedValueChanged
             ComboBox_Type.ValueMember = "Value";
             ComboBox_Type.DisplayMember = "Key";
+            ComboBox_Type.DataSource = typeList.Select(x => new KeyValuePair<string, int>(x.GetDescription(), (int)x)).ToList();
+            ComboBox_Type.SelectedValue = model.ResponseType;
 
             ComboBox_Method.SelectedItem = model.Method;
-            ComboBox_Type.SelectedValue = model.ResponseType;
+            SetBtnEditText();
         }
 
         private void Btn_Edit_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
@@ -101,5 +97,26 @@ namespace MockupServer.UI
             };
             form.ShowDialog();
         }
+
+        private void ComboBox_Type_SelectedValueChanged(object sender, EventArgs e)
+        {
+            SetBtnEditText();
+        }
+
+        private void SetBtnEditText()
+        {
+            if (ComboBox_Type.SelectedValue == null)
+                return;
+
+            if ((ResponseType)ComboBox_Type.SelectedValue! == ResponseType.File)
+            {
+                Btn_Edit.Text = "选择文件";
+            }
+            else
+            {
+                Btn_Edit.Text = "编辑内容";
+            }
+        }
+
     }
 }
