@@ -1,5 +1,4 @@
-﻿using FreeSql;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
@@ -7,7 +6,6 @@ using Microsoft.AspNetCore.Mvc.WebApiCompatShim;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using MockupServer.Configs;
 using MockupServer.LocalDataSource;
 using Serilog;
 using Serilog.Events;
@@ -76,12 +74,7 @@ namespace MockupServer
                 try
                 {
                     var dbService = context.RequestServices.GetService<MockupService>()!;
-                    var option = context.RequestServices.GetService<ServerOptions>()!;
-
-                    var newUrl = new Uri($"{option.OriginalServiceUrl}{context.Request.Path}{context.Request.QueryString}");
-
-                    var relativeUrl = $"{context.Request.Path}{context.Request.QueryString}";
-                    var data = await dbService.GetResponseMessage(await RequestBody.GetHttpRequestMessage(context, newUrl.AbsoluteUri));
+                    var data = await dbService.GetResponseMessage(context);
                     if (data != null)
                     {
                         foreach (var header in data.Headers)
@@ -112,10 +105,10 @@ namespace MockupServer
 
     public static class RequestBody
     {
-        public static async Task<HttpRequestMessage> GetHttpRequestMessage(HttpContext context, string totalUrl)
+        public static async Task<HttpRequestMessage> GetHttpRequestMessage(HttpContext context, Uri newUri)
         {
             var requestMsg = new HttpRequestMessageFeature(context).HttpRequestMessage;
-            requestMsg.RequestUri = new Uri(totalUrl);
+            requestMsg.RequestUri = newUri;
             //if (requestMsg.Content != null)
             //    requestMsg.Content = requestMsg.Content.Headers.ContentLength == 0 ? null : requestMsg.Content;
             //requestMsg.Headers.Remove("Accept");

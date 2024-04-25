@@ -1,8 +1,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using MockupServer.Configs;
+using MockupServer.Models;
 using MockupServer.Storage;
-using Newtonsoft.Json;
 
 namespace MockupServer.UI
 {
@@ -28,9 +27,7 @@ namespace MockupServer.UI
 
         private void BtnStart_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrEmpty(TxtServer.Text)
-                || TxtServer.Text.EndsWith("/")
-                || string.IsNullOrEmpty(TxtPort.Text)
+            if (string.IsNullOrEmpty(TxtPort.Text)
                 || !int.TryParse(TxtPort.Text, out int port))
             {
                 Alert.Show("请完成所有内容");
@@ -46,11 +43,13 @@ namespace MockupServer.UI
                         BtnStart.Enabled = false;
                     });
                     var options = await SaveAndReadOption();
+
                     _webApp = WebServerService.Create(options);
                     await _webApp.StartServerAsync();
                     BeginInvoke(() =>
                     {
                         Alert.Show("服务器已启动");
+                        Label_ServerInfo.Text = $"http://localhost:{options.ListenerPort}";
                         SetFormStatus(true);
                     });
                 }
@@ -59,25 +58,28 @@ namespace MockupServer.UI
                     Invoke(() =>
                     {
                         BtnStart.Enabled = true;
+                        Label_ServerInfo.Text = "";
                     });
                     _logger.LogError(ex.ToString());
                     await _webApp.StopServerAysnc();
+                    Label_ServerInfo.Text = "";
                     Alert.Show(ex.ToString());
                 }
             });
 
         }
 
-        private async Task<ServerOptions> SaveAndReadOption()
+        private async Task<GlobalCache> SaveAndReadOption()
         {
-            int.TryParse(TxtPort.Text, out int port);
-            var option = new ServerOptions()
+            if (int.TryParse(TxtPort.Text, out int port))
             {
-                OriginalServiceUrl = TxtServer.Text,
-                Port = port,
-            };
-            await File.WriteAllTextAsync(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ServerSettings.SettingFileName), JsonConvert.SerializeObject(option));
-            return option;
+                var model = new GlobalCache()
+                {
+                    ListenerPort = port
+                };
+                return await _dataService.SaveGlobal(model);
+            }
+            return new GlobalCache();
         }
 
         private async void BtnStop_Click(object sender, EventArgs e)
@@ -87,6 +89,7 @@ namespace MockupServer.UI
                 await _webApp.StopServerAysnc();
                 _webApp = null;
                 Alert.Show("服务器已停止");
+                Label_ServerInfo.Text = "";
                 SetFormStatus(false);
             }
         }
@@ -101,23 +104,12 @@ namespace MockupServer.UI
 
         private async Task ReadCacheData()
         {
-            var settingFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ServerSettings.SettingFileName);
-            if (File.Exists(settingFile))
+            var global = await _dataService.GetGlobal();
+
+            BeginInvoke(() =>
             {
-                var configStr = await File.ReadAllTextAsync(settingFile);
-                if (!string.IsNullOrEmpty(configStr))
-                {
-                    var configs = JsonConvert.DeserializeObject<ServerOptions>(configStr);
-                    if (configs != null)
-                    {
-                        BeginInvoke(() =>
-                        {
-                            TxtPort.Text = configs.Port.ToString();
-                            TxtServer.Text = configs.OriginalServiceUrl;
-                        });
-                    }
-                }
-            }
+                TxtPort.Text = global.ListenerPort.ToString();
+            });
         }
 
         private void SetFormStatus(bool isStarted)
@@ -126,12 +118,12 @@ namespace MockupServer.UI
             BtnStop.Enabled = isStarted;
 
             TxtPort.Enabled = !isStarted;
-            TxtServer.Enabled = !isStarted;
+            // TxtServer.Enabled = !isStarted;
         }
 
-        private void TxtHost_Leave(object sender, EventArgs e)
+        private void Btn_DomainManage_Click(object sender, EventArgs e)
         {
-            //GerateUrlPrefix();
+            new DomainManageForm(_dataService).ShowDialog();
         }
     }
 }

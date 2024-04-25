@@ -1,8 +1,8 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using FreeSql.DataAnnotations;
 
 namespace MockupServer.Models
 {
-    [Table("mockupobject")]
+    [Table(Name = "mockupobject")]
     public class MockupObject
     {
         public string RequestUrl { get; set; } = null!;

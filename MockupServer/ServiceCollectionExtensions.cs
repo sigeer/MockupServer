@@ -12,15 +12,11 @@ namespace MockupServer
     {
         public static IServiceCollection AddMockupBaseService(this IServiceCollection services)
         {
-            var instance = new FreeSqlBuilder().UseConnectionString(DataType.Sqlite, "data source=database.db").Build();
-            instance.Ado.ExecuteScalar("""
-                CREATE TABLE If Not Exists "MockupObject" (
-                  "RequestUrl" varchar(200) not null COLLATE NOCASE,
-                  "Method" varchar(20) not null COLLATE NOCASE,
-                  "ResponseType" int not null,
-                  "ResponseData" Text
-                );
-                """);
+            var instance = new FreeSqlBuilder()
+                .UseConnectionString(DataType.Sqlite, "data source=database.db")
+                .UseAutoSyncStructure(true)
+                .Build();
+
             services.AddSingleton<IFreeSql>(instance);
             services.AddScoped<DataService>();
             var _logger = new LoggerConfiguration()
