@@ -51,8 +51,7 @@ namespace MockupServer.Storage
 
         public async Task<HttpResponseMessage?> GetDataFromCache(string method, string relativeUrl)
         {
-            var list = await _freeSql.Select<MockupObject>().Where(x => x.Method == method).ToListAsync();
-            var data = list.FirstOrDefault(x => string.Compare(x.RequestUrl, relativeUrl, true) == 0 || Regex.IsMatch(relativeUrl, x.RequestUrl, RegexOptions.IgnoreCase));
+            var data = await _freeSql.Select<MockupObject>().Where(x => x.Method == method && x.RequestUrl == relativeUrl).ToOneAsync();
             if (data == null)
                 return null;
 
