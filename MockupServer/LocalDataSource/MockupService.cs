@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Logging;
 using MockupServer.Storage;
 using System.Net;
-using static FreeSql.Internal.GlobalFilter;
 
 namespace MockupServer.LocalDataSource
 {
