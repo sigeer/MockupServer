@@ -105,10 +105,11 @@ namespace MockupServer
 
     public static class RequestBody
     {
-        public static async Task<HttpRequestMessage> GetHttpRequestMessage(HttpContext context, Uri newUri)
+        public static async Task<HttpRequestMessage> GetHttpRequestMessage(HttpContext context, Uri? newUri = null)
         {
             var requestMsg = new HttpRequestMessageFeature(context).HttpRequestMessage;
-            requestMsg.RequestUri = newUri;
+            if (newUri != null)
+                requestMsg.RequestUri = newUri;
             //if (requestMsg.Content != null)
             //    requestMsg.Content = requestMsg.Content.Headers.ContentLength == 0 ? null : requestMsg.Content;
             //requestMsg.Headers.Remove("Accept");

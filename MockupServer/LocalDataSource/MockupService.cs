@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using MockupServer.Storage;
 using System.Net;
+using static FreeSql.Internal.GlobalFilter;
 
 namespace MockupServer.LocalDataSource
 {
@@ -41,20 +42,32 @@ namespace MockupServer.LocalDataSource
                 if (data != null)
                     return data;
 
-                var domainList = await _dataService.GetDomainList();
-                var effectiveData = domainList.Where(x =>
-                                        relativeUrl.StartsWith(x.UrlPrefix, StringComparison.OrdinalIgnoreCase)
-                                        && !string.IsNullOrWhiteSpace(x.Target)
-                                   ).OrderByDescending(x => x.UrlPrefix.Length)
-                                    .ToArray();
-                foreach (var item in effectiveData)
+                if (data == null)
                 {
-                    var newUri = new Uri($"{item.Target}{relativeUrl}");
-                    var requestMessage = await RequestBody.GetHttpRequestMessage(context, newUri);
-                    data = await GetDataFromRemote(requestMessage);
+                    if (context.Request.Host.Host != "localhost" && context.Request.Host.Port != State.Port)
+                    {
+                        var requestMessage = await RequestBody.GetHttpRequestMessage(context);
+                        data = await GetDataFromRemote(requestMessage);
+                    }
+                }
 
-                    if (data != null)
-                        break;
+                if (data == null)
+                {
+                    var domainList = await _dataService.GetDomainList();
+                    var effectiveData = domainList.Where(x =>
+                                            relativeUrl.StartsWith(x.UrlPrefix, StringComparison.OrdinalIgnoreCase)
+                                            && !string.IsNullOrWhiteSpace(x.Target)
+                                       ).OrderByDescending(x => x.UrlPrefix.Length)
+                                        .ToArray();
+                    foreach (var item in effectiveData)
+                    {
+                        var newUri = new Uri($"{item.Target}{relativeUrl}");
+                        var requestMessage = await RequestBody.GetHttpRequestMessage(context, newUri);
+                        data = await GetDataFromRemote(requestMessage);
+
+                        if (data != null)
+                            break;
+                    }
                 }
                 data ??= new HttpResponseMessage(HttpStatusCode.NotFound);
                 return data;
