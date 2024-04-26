@@ -10,6 +10,7 @@ namespace MockupServer.UI
         ILogger<Form1> _logger;
         IHost? _webApp;
         DataService _dataService;
+        GlobalCache? _global;
         public Form1(ILogger<Form1> logger, DataService dataService)
         {
             _logger = logger;
@@ -42,14 +43,13 @@ namespace MockupServer.UI
                     {
                         BtnStart.Enabled = false;
                     });
-                    var options = await SaveAndReadOption();
+                    _global = await SaveAndReadOption();
 
-                    _webApp = WebServerService.Create(options);
+                    _webApp = WebServerService.Create(_global);
                     await _webApp.StartServerAsync();
                     BeginInvoke(() =>
                     {
                         Alert.Show("服务器已启动");
-                        Label_ServerInfo.Text = $"http://localhost:{options.ListenerPort}";
                         SetFormStatus(true);
                     });
                 }
@@ -57,12 +57,10 @@ namespace MockupServer.UI
                 {
                     Invoke(() =>
                     {
-                        BtnStart.Enabled = true;
-                        Label_ServerInfo.Text = "";
+                        SetFormStatus(false);
                     });
                     _logger.LogError(ex.ToString());
                     await _webApp.StopServerAysnc();
-                    Label_ServerInfo.Text = "";
                     Alert.Show(ex.ToString());
                 }
             });
@@ -71,15 +69,13 @@ namespace MockupServer.UI
 
         private async Task<GlobalCache> SaveAndReadOption()
         {
+            _global ??= await _dataService.GetGlobal();
             if (int.TryParse(TxtPort.Text, out int port))
             {
-                var model = new GlobalCache()
-                {
-                    ListenerPort = port
-                };
-                return await _dataService.SaveGlobal(model);
+                _global.ListenerPort = port;
+                await _dataService.SaveGlobal(_global);
             }
-            return new GlobalCache();
+            return _global;
         }
 
         private async void BtnStop_Click(object sender, EventArgs e)
@@ -89,7 +85,6 @@ namespace MockupServer.UI
                 await _webApp.StopServerAysnc();
                 _webApp = null;
                 Alert.Show("服务器已停止");
-                Label_ServerInfo.Text = "";
                 SetFormStatus(false);
             }
         }
@@ -104,11 +99,11 @@ namespace MockupServer.UI
 
         private async Task ReadCacheData()
         {
-            var global = await _dataService.GetGlobal();
+            _global = await _dataService.GetGlobal();
 
             BeginInvoke(() =>
             {
-                TxtPort.Text = global.ListenerPort.ToString();
+                TxtPort.Text = _global.ListenerPort.ToString();
             });
         }
 
@@ -118,6 +113,7 @@ namespace MockupServer.UI
             BtnStop.Enabled = isStarted;
 
             TxtPort.Enabled = !isStarted;
+            Label_ServerInfo.Text = isStarted ? $"http://localhost:{_global?.ListenerPort}": "";
             // TxtServer.Enabled = !isStarted;
         }
 
