@@ -31,7 +31,7 @@ namespace MockupServer
                     config.Enrich.FromLogContext()
                         .MinimumLevel.Debug()
                         .MinimumLevel.Override("System", LogEventLevel.Warning)
-                        .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+                        .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
                         .CustomWriteTo();
                 });
 
