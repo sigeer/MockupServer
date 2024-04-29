@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.WebApiCompatShim;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Net.Http.Headers;
 using MockupServer.LocalDataSource;
 using Serilog;
 using Serilog.Events;
@@ -77,10 +78,6 @@ namespace MockupServer
                     var data = await dbService.GetResponseMessage(context);
                     if (data != null)
                     {
-                        foreach (var header in data.Headers)
-                        {
-                            context.Response.Headers[header.Key] = header.Value.ToArray();
-                        }
                         foreach (var header in data.Content.Headers)
                         {
                             context.Response.Headers[header.Key] = header.Value.ToArray();
