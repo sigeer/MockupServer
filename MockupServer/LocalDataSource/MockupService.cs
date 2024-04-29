@@ -43,6 +43,7 @@ namespace MockupServer.LocalDataSource
 
                 if (data == null)
                 {
+                    // 代理模式
                     if (context.Request.Host.Host != "localhost" && context.Request.Host.Port != State.Port)
                     {
                         var requestMessage = await RequestBody.GetHttpRequestMessage(context);
