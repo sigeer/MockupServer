@@ -1,14 +1,5 @@
 ﻿using MockupServer.Models;
 using MockupServer.Storage;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace MockupServer.UI
 {
@@ -31,7 +22,7 @@ namespace MockupServer.UI
         {
             DataGridViewMain.Columns.Add(new DataGridViewColumn()
             {
-                HeaderText = "请求方式",
+                HeaderText = "域",
                 Name = nameof(Domain.UrlPrefix),
                 Width = 200,
                 CellTemplate = new DataGridViewTextBoxCell(),
@@ -70,7 +61,6 @@ namespace MockupServer.UI
                             ValueType = typeof(string),
                         });
                         DataGridViewMain.Rows.Add(row);
-                        row.Cells[0].ReadOnly = true;
                     });
                 });
             });
@@ -88,8 +78,24 @@ namespace MockupServer.UI
                 return;
             }
 
+            if (!urlPrefix.EndsWith('/'))
+            {
+                // 避免出现 /abcdef 被 /abc 域处理的情况<应该由默认的 / 域接管>
+                MessageBox.Show("需要以/结尾");
+                return;
+            }
+
             var model = new Domain(urlPrefix, target);
             await _dataService.InsertOrUpdateDomain(model);
+        }
+
+        private async void DataGridViewMain_UserDeletedRow(object sender, DataGridViewRowEventArgs e)
+        {
+            var urlPrefix = e.Row.Cells[0].Value?.ToString();
+            if (string.IsNullOrEmpty(urlPrefix))
+                return;
+
+            await _dataService.DeleteDomain(urlPrefix);
         }
     }
 }

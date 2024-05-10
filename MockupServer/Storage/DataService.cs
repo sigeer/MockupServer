@@ -31,6 +31,11 @@ namespace MockupServer.Storage
             return model;
         }
 
+        public async Task DeleteDomain(string urlPrefix)
+        {
+            await _freeSql.Delete<Domain>().Where(x => x.UrlPrefix == urlPrefix).ExecuteAffrowsAsync();
+        }
+
         public async Task<GlobalCache> GetGlobal()
         {
             var model = await _freeSql.Select<GlobalCache>().ToOneAsync();

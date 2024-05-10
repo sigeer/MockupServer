@@ -43,16 +43,6 @@ namespace MockupServer.LocalDataSource
 
                 if (data == null)
                 {
-                    // 代理模式
-                    if (context.Request.Host.Host != "localhost" && context.Request.Host.Port != State.Port)
-                    {
-                        var requestMessage = await RequestBody.GetHttpRequestMessage(context);
-                        data = await GetDataFromRemote(requestMessage);
-                    }
-                }
-
-                if (data == null)
-                {
                     var domainList = await _dataService.GetDomainList();
                     var effectiveData = domainList.Where(x =>
                                             relativeUrl.StartsWith(x.UrlPrefix, StringComparison.OrdinalIgnoreCase)
@@ -61,7 +51,8 @@ namespace MockupServer.LocalDataSource
                                         .ToArray();
                     foreach (var item in effectiveData)
                     {
-                        var newUri = new Uri($"{item.Target}{relativeUrl}");
+                        var trimRelative = relativeUrl.Substring(item.UrlPrefix.Length - 1);
+                        var newUri = new Uri($"{item.Target}{trimRelative}");
                         var requestMessage = await RequestBody.GetHttpRequestMessage(context, newUri);
                         data = await GetDataFromRemote(requestMessage);
 
@@ -69,6 +60,7 @@ namespace MockupServer.LocalDataSource
                             break;
                     }
                 }
+
                 data ??= new HttpResponseMessage(HttpStatusCode.NotFound);
                 return data;
 

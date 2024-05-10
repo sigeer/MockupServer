@@ -42,6 +42,7 @@
             DataGridViewMain.Size = new Size(558, 256);
             DataGridViewMain.TabIndex = 0;
             DataGridViewMain.CellEndEdit += DataGridViewMain_CellEndEdit;
+            DataGridViewMain.UserDeletedRow += DataGridViewMain_UserDeletedRow;
             // 
             // Btn_Close
             // 
