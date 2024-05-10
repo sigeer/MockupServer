@@ -29,9 +29,9 @@
 |http://api.sample2.com/auth/|http://localhost:8765|
 
 |接收到的请求|匹配的域|相对路径(步骤2)|实际请求(步骤3)|
-|---|-----|-----|-----------------------------|--|
+|---|-----|-----|-----------------------------|
 |http://api.sample1.com/auth/xxx |http://api.sample1.com/|/auth/xxx|http://localhost:9876/auth/xxx|
-|http://api.sample2.com/xxx|404||-|
+|http://api.sample2.com/xxx|404|||
 |http://api.sample2.com/auth/xxx|http://api.sample2.com/auth/|/xxx|http://localhost:8765/xxx|
 
 
@@ -40,9 +40,9 @@
 
 1. 配置好端口，比如9000
 2. 启动服务器，设置域，/ -> http://localhost:9555（开发环境api）
-3. 如果前端项目不改请求url，则可以使用代理，代理到 http://localhost:9000【第1步提到的端口】，或者修改前端项目的url为，将apiurl改为 http://localhost:9000
+3. 如果前端项目不改请求url，则可以使用代理，代理到 http://localhost:9000 【第1步提到的端口】，或者修改前端项目的url为，将apiurl改为 http://localhost:9000
 4. 在模拟数据表中，设置需要模拟的url及数据
 
 ## 后续修改
 
-- [ ] 对不同域使用不同模拟数据表：支持多个项目
+- [x] 对不同域使用不同模拟数据表：支持多个项目
