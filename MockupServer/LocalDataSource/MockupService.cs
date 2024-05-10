@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Logging;
 using MockupServer.Storage;
 using System.Net;
@@ -36,34 +37,33 @@ namespace MockupServer.LocalDataSource
         {
             try
             {
-                var relativeUrl = $"{context.Request.Path}{context.Request.QueryString}";
-                HttpResponseMessage? data = await _dataService.GetDataFromCache(context.Request.Method, relativeUrl);
-                if (data != null)
-                    return data;
+                var totalUrl = context.Request.GetDisplayUrl();
+                var domainList = await _dataService.GetDomainList();
+                var effectiveData = domainList.Where(x =>
+                                        totalUrl.StartsWith(x.UrlPrefix, StringComparison.OrdinalIgnoreCase)
+                                        && !string.IsNullOrWhiteSpace(x.Target)
+                                   ).OrderByDescending(x => x.UrlPrefix.Length)
+                                    .ToArray();
 
-                if (data == null)
+                if (effectiveData.Length == 0)
+                    return new HttpResponseMessage(HttpStatusCode.NotFound);
+
+                foreach (var item in effectiveData)
                 {
-                    var domainList = await _dataService.GetDomainList();
-                    var effectiveData = domainList.Where(x =>
-                                            relativeUrl.StartsWith(x.UrlPrefix, StringComparison.OrdinalIgnoreCase)
-                                            && !string.IsNullOrWhiteSpace(x.Target)
-                                       ).OrderByDescending(x => x.UrlPrefix.Length)
-                                        .ToArray();
-                    foreach (var item in effectiveData)
-                    {
-                        var trimRelative = relativeUrl.Substring(item.UrlPrefix.Length - 1);
-                        var newUri = new Uri($"{item.Target}{trimRelative}");
-                        var requestMessage = await RequestBody.GetHttpRequestMessage(context, newUri);
-                        data = await GetDataFromRemote(requestMessage);
+                    var relativeUrl = totalUrl.Substring(item.UrlPrefix.Length - 1);
 
-                        if (data != null)
-                            break;
-                    }
+                    var data = await _dataService.GetDataFromCache(context.Request.Method, relativeUrl);
+                    if (data != null)
+                        return data;
+
+                    var newUri = new Uri($"{item.Target.TrimEnd('/')}{relativeUrl}");
+                    var requestMessage = await RequestBody.GetHttpRequestMessage(context, newUri);
+                    data = await GetDataFromRemote(requestMessage);
+
+                    if (data != null)
+                        return data;
                 }
-
-                data ??= new HttpResponseMessage(HttpStatusCode.NotFound);
-                return data;
-
+                return new HttpResponseMessage(HttpStatusCode.NotFound);
 
             }
             catch (Exception ex)

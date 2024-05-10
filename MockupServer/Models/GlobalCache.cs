@@ -5,6 +5,6 @@ namespace MockupServer.Models
     [Table(Name = "global")]
     public class GlobalCache
     {
-        public int ListenerPort { get; set; } = 80;
+        public int ListenerPort { get; set; } = 9550;
     }
 }
