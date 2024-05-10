@@ -78,9 +78,9 @@ namespace MockupServer.UI
                 return;
             }
 
-            if (!urlPrefix.EndsWith('/'))
+            if (!urlPrefix.EndsWith('/') && !target.EndsWith('/'))
             {
-                // 避免出现 /abcdef 被 /abc 域处理的情况<应该由默认的 / 域接管>
+                // 避免出现 /abcdef 被 /abc 域处理的情况
                 MessageBox.Show("需要以/结尾");
                 return;
             }

@@ -13,7 +13,7 @@ namespace MockupServer.Models
         }
 
         [Column(IsPrimary = true)]
-        public string UrlPrefix { get; set; } = "/";
+        public string UrlPrefix { get; set; } = "http://localhost:9550";
         public string Target { get; set; } = "http://localhost";
     }
 }
