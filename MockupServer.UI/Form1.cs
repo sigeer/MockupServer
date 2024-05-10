@@ -14,7 +14,6 @@ namespace MockupServer.UI
         public Form1(ILogger<Form1> logger, DataService dataService)
         {
             _logger = logger;
-            _logger.LogInformation("Form“—∆Ù∂Ø");
             _dataService = dataService;
 
             InitializeComponent();
