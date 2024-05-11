@@ -96,6 +96,9 @@ namespace MockupServer.Storage
                     fakeContent = new StringContent(content, textContentType);
                     break;
                 case ResponseType.File:
+                    if (!File.Exists(content))
+                        return new HttpResponseMessage(HttpStatusCode.NotFound);
+
                     fakeContent = new StreamContent(File.OpenRead(content));
                     fakeContent.Headers.ContentType = new MediaTypeHeaderValue(content.GetMimeTypeByFileName());
                     break;
