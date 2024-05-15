@@ -6,13 +6,12 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Net.Http.Headers;
 using MockupServer.LocalDataSource;
 using MockupServer.Models;
 using Serilog;
 using Serilog.Events;
-using System.Reflection.PortableExecutable;
 using Utility.Common;
-using Utility.Serilog.Extension;
 
 namespace MockupServer
 {
@@ -51,7 +50,7 @@ namespace MockupServer
                             .AllowAnyMethod()
                             .AllowAnyHeader()
                             .AllowCredentials()
-                            .WithExposedHeaders("Content-Disposition");
+                            .WithExposedHeaders(HeaderNames.ContentDisposition);
                         });
                     });
                 });
@@ -93,9 +92,6 @@ namespace MockupServer
                         {
                             try
                             {
-                                var logger = context.RequestServices.GetService<ILogger<WebServerService>>();
-                                logger!.LogInformation("request");
-
                                 var dbService = context.RequestServices.GetService<MockupService>()!;
                                 var data = await dbService.GetResponseMessage(context);
                                 if (data != null)

@@ -1,14 +1,5 @@
-﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Extensions;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.WebApiCompatShim;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using MockupServer.LocalDataSource;
-using Serilog;
-using Serilog.Events;
 
 namespace MockupServer
 {
@@ -45,7 +36,7 @@ namespace MockupServer
 
             copyOfRequest.Version = request.Version;
 
-            foreach (KeyValuePair<string, object> prop in request.Options)
+            foreach (KeyValuePair<string, object?> prop in request.Options)
             {
                 copyOfRequest.Options.TryAdd(prop.Key, prop.Value);
             }
