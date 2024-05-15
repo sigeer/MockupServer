@@ -23,6 +23,7 @@ namespace MockupServer.UI
             ServiceCollection services = new ServiceCollection();
 
             services.AddMockupBaseService();
+            services.AddLogService();
             services.AddSingleton<Form1>();
 
             var serviceProvider = services.BuildServiceProvider();
