@@ -27,13 +27,14 @@
 |---|-----|
 |http://api.sample1.com/|http://localhost:9876|
 |http://api.sample2.com/auth/|http://localhost:8765|
+|http://api.sample2.com/auth/token|http://localhost:7654|
 
 |接收到的请求|匹配的域|相对路径(步骤2)|实际请求(步骤3)|
 |---|-----|-----|-----------------------------|
 |http://api.sample1.com/auth/xxx |http://api.sample1.com/|/auth/xxx|http://localhost:9876/auth/xxx|
 |http://api.sample2.com/xxx|404|||
 |http://api.sample2.com/auth/xxx|http://api.sample2.com/auth/|/xxx|http://localhost:8765/xxx|
-
+|http://api.sample2.com/auth/token/1|http://api.sample2.com/auth/token|/xxx|http://localhost:7654/1|
 
 
 ## 使用方法
