@@ -18,7 +18,6 @@ namespace MockupServer.UI
 
             InitializeComponent();
             SetFormStatus(false);
-            _logger.LogInformation("≥Ã–Ú“—∆Ù∂Ø");
         }
 
         private void BtnMockupDataForm_Click(object sender, EventArgs e)
@@ -115,7 +114,6 @@ namespace MockupServer.UI
 
             TxtPort.Enabled = !isStarted;
             Label_ServerInfo.Text = isStarted ? $"http://localhost:{_global?.ListenerPort}": "";
-            // TxtServer.Enabled = !isStarted;
         }
 
         private void Btn_DomainManage_Click(object sender, EventArgs e)
