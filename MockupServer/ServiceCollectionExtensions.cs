@@ -19,17 +19,23 @@ namespace MockupServer
 
             services.AddSingleton<IFreeSql>(instance);
             services.AddScoped<DataService>();
-            var _logger = new LoggerConfiguration()
-                .Enrich.FromLogContext()
-                .MinimumLevel.Debug()
-                .MinimumLevel.Override("System", LogEventLevel.Warning)
-                .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-                .CustomWriteTo()
-                .CreateLogger();
+
+            return services;
+        }
+
+        public static IServiceCollection AddLogService(this IServiceCollection services)
+        {
+            Log.Logger = new LoggerConfiguration()
+                    .Enrich.FromLogContext()
+                    .MinimumLevel.Debug()
+                    .MinimumLevel.Override("System", LogEventLevel.Warning)
+                    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+                    .CustomWriteTo()
+                    .CreateLogger();
 
             services.AddLogging(builder =>
             {
-                builder.AddSerilog(logger: _logger, dispose: true);
+                builder.AddSerilog(logger: Log.Logger, dispose: true);
             });
             return services;
         }

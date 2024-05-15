@@ -18,6 +18,7 @@ namespace MockupServer.UI
 
             InitializeComponent();
             SetFormStatus(false);
+            _logger.LogInformation("≥Ã–Ú“—∆Ù∂Ø");
         }
 
         private void BtnMockupDataForm_Click(object sender, EventArgs e)
