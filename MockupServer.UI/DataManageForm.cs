@@ -34,14 +34,14 @@ namespace MockupServer.UI
             {
                 HeaderText = "Url",
                 Name = nameof(MockupObject.RequestUrl),
-                Width = 200,
+                Width = 500,
                 CellTemplate = new DataGridViewTextBoxCell(),
             });
             DataGridViewMain.Columns.Add(new DataGridViewColumn()
             {
                 HeaderText = "请求方式",
                 Name = nameof(MockupObject.Method),
-                Width = 200,
+                Width = 100,
                 CellTemplate = new DataGridViewTextBoxCell(),
             });
             DataGridViewMain.Columns.Add(new DataGridViewColumn()

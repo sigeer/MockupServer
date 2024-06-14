@@ -3,13 +3,15 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 
 namespace MockupServer.Response
 {
     public class CSharpUtility
     {
-        static Random random = new Random();
+        Random random = new Random();
         static HashSet<Type> numericTypes = new HashSet<Type>
         {
             typeof(byte), typeof(sbyte),
@@ -20,10 +22,15 @@ namespace MockupServer.Response
             typeof(decimal)
         };
 
-        public static object GenerateObjectByCSharpClass(string inputClassString)
+        Type[] allTypes = new Type[0];
+
+        public object GenerateObjectByCSharpClass(string inputClassString)
         {
             string code = $@"
         using System;
+        using System.Collections.Generic;
+        using System.ComponentModel.DataAnnotations;
+        using MockupServer.Response;
 
         namespace DynamicNamespace
         {{
@@ -32,14 +39,22 @@ namespace MockupServer.Response
 
             // 编译代码
             var syntaxTree = CSharpSyntaxTree.ParseText(code);
+
+            var references = AppDomain.CurrentDomain.GetAssemblies()
+                  .Where(a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location))
+                  .Select(a => MetadataReference.CreateFromFile(a.Location))
+                  .Cast<MetadataReference>()
+                  .Concat(new[]
+                {
+                    MetadataReference.CreateFromFile(typeof(object).GetTypeInfo().Assembly.Location),
+                    MetadataReference.CreateFromFile(typeof(Console).GetTypeInfo().Assembly.Location),
+                    MetadataReference.CreateFromFile(typeof(RangeAttribute).GetTypeInfo().Assembly.Location)
+                });
+
             var compilation = CSharpCompilation.Create(
                 "DynamicAssembly",
                 new[] { syntaxTree },
-                new[]
-                {
-                MetadataReference.CreateFromFile(typeof(object).GetTypeInfo().Assembly.Location),
-                MetadataReference.CreateFromFile(typeof(Console).GetTypeInfo().Assembly.Location)
-                },
+                references,
                 new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
             using (var ms = new MemoryStream())
@@ -53,25 +68,125 @@ namespace MockupServer.Response
                     {
                         Console.Error.WriteLine(diagnostic.ToString());
                     }
-                    return new { text = "error" };
+                    return new { text = "error", message = string.Join(Environment.NewLine, result.Diagnostics.Select(x => x.ToString())) };
                 }
                 else
                 {
-                    // 编译成功，加载程序集
-                    ms.Seek(0, SeekOrigin.Begin);
-                    Assembly assembly = Assembly.Load(ms.ToArray());
+                    try
+                    {
+                        // 编译成功，加载程序集
+                        ms.Seek(0, SeekOrigin.Begin);
+                        Assembly assembly = Assembly.Load(ms.ToArray());
 
-                    // 使用反射获取类
-                    var dynamicClassType = assembly.GetTypes();
-                    var rootType = dynamicClassType.FirstOrDefault(x => x.Name == "Root");
-                    if (rootType == null)
-                        throw new Exception("至少要有一个Root类");
-                    return GenerateRandomObject(rootType);
+                        // 使用反射获取类
+                        allTypes = assembly.GetTypes();
+                        var rootTypes = allTypes.Where(x => x.Name == "Root");
+                        if (rootTypes.Count() == 0)
+                            throw new Exception("没找到Root类");
+
+                        if (rootTypes.Count() > 1)
+                            throw new Exception("重复声明了Root类");
+
+                        var entryProperty = rootTypes.First()!.GetProperty("data");
+                        if (entryProperty == null)
+                            throw new Exception("Root类中没找到data属性");
+
+                        return GenerateDataByProperty(entryProperty);
+                    }
+                    catch (Exception ex)
+                    {
+                        return new { text = "error", message = ex.Message };
+                    }
                 }
             }
         }
 
-        public static object GenerateRandomObject(Type responseType)
+        public object GenerateDataByType(Type propertyType, PropertyInfo? propertyInfo = null)
+        {
+            var rangeAttr = propertyInfo?.GetCustomAttribute<RangeAttribute>();
+            int min = (int?)rangeAttr?.Minimum ?? 0; int max = (int?)rangeAttr?.Maximum ?? random.Next(10);
+
+            var nullableType = Nullable.GetUnderlyingType(propertyType);
+            var realType = nullableType ?? propertyType;
+            if (propertyType == typeof(string))
+            {
+                return GenerateRandomString(max);
+            }
+            else if (realType == typeof(bool))
+            {
+                return DateTime.Now.Ticks % 2 == 0;
+            }
+            else if (realType == typeof(char))
+            {
+                return GenerateRandomChar();
+            }
+            else if (realType == typeof(DateTime))
+            {
+                return DateTime.Now;
+            }
+            else if (numericTypes.Contains(realType))
+            {
+                return GenerateRandomNumber(realType, min, max);
+            }
+            else if (propertyType.IsGenericType)
+            {
+                var genericType = propertyType.GetGenericTypeDefinition();
+                var genericArguments = propertyType.GetGenericArguments();
+                if (genericType == typeof(List<>))
+                {
+                    var elementType = genericArguments[0]!;
+                    object listInstance = Activator.CreateInstance(propertyType)!;
+                    var addMethod = propertyType.GetMethod("Add")!;
+                    var listLength = random.Next(min, max );
+                    for (int i = 0; i < listLength; i++)
+                    {
+                        addMethod.Invoke(listInstance, new object[] { GenerateDataByType(elementType) });
+                    }
+                    return listInstance;
+                }
+                if (genericType == typeof(Dictionary<,>))
+                {
+                    var keyType = genericArguments[0];
+                    var valueType = Nullable.GetUnderlyingType(genericArguments[1]) ?? genericArguments[1];
+                    object dictionary = Activator.CreateInstance(propertyType)!;
+                    var addMethod = propertyType.GetMethod("Add")!;
+                    var listLength = random.Next(min, max);
+                    for (int i = 0; i < listLength; i++)
+                    {
+                        addMethod.Invoke(dictionary, new object[] { GenerateDataByType(keyType), GenerateDataByType(valueType) });
+                    }
+                    return dictionary;
+                }
+                if (allTypes.Contains(genericType))
+                {
+                    return GenerateRandomObject(propertyType);
+                }
+            }
+            else if (propertyType.IsArray)
+            {
+                var elementType = propertyType.GetElementType()!;
+                Array arrayInstance = Array.CreateInstance(elementType, random.Next(min, max));
+                for (int i = 0; i < arrayInstance.Length; i++)
+                {
+                    arrayInstance.SetValue(GenerateDataByType(elementType), i);
+                }
+                return arrayInstance;
+            }
+            else if (propertyType.IsClass)
+            {
+                return GenerateRandomObject(propertyType);
+            }
+            throw new Exception($"暂不支持该类型的随机生成{propertyType.FullName}");
+        }
+
+
+        public object GenerateDataByProperty(PropertyInfo propery)
+        {
+            var rangeAttr = propery.GetCustomAttribute<RangeAttribute>();
+            return GenerateDataByType(propery.PropertyType, propery);
+        }
+
+        private object GenerateRandomObject(Type responseType)
         {
             object obj = Activator.CreateInstance(responseType);
 
@@ -81,66 +196,16 @@ namespace MockupServer.Response
             // 为每个属性赋予随机字符的值
             foreach (PropertyInfo property in properties)
             {
-                var nullableType = Nullable.GetUnderlyingType(property.PropertyType);
-                var realType = nullableType ?? property.PropertyType;
-                if (property.PropertyType == typeof(string))
-                {
-                    // 生成随机字符串并赋值给属性
-                    string randomValue = GenerateRandomString(10); // 生成长度为 10 的随机字符串
-                    property.SetValue(obj, randomValue);
-                }
-                else if (realType == typeof(bool))
-                {
-                    property.SetValue(obj, DateTime.Now.Ticks % 2 == 0);
-                }
-                else if (realType == typeof(char))
-                {
-                    property.SetValue(obj, GenerateRandomChar());
-                }
-                else if (numericTypes.Contains(realType))
-                {
-                    property.SetValue(obj, GenerateRandomNumber(realType));
-                }
-                else if (property.PropertyType.IsGenericType)
-                {
-                    var genericArguments = property.PropertyType.GetGenericArguments();
-                    if (property.PropertyType.GetGenericTypeDefinition() == typeof(List<>))
-                    {
-                        var elementType = genericArguments[0]!;
-                        object listInstance = Activator.CreateInstance(property.PropertyType)!;
-                        var addMethod = property.PropertyType.GetMethod("Add")!;
-                        var listLength = random.Next(10);
-                        for (int i = 0; i < listLength; i++)
-                        {
-                            addMethod.Invoke(listInstance, new object[] { GenerateRandomObject(elementType) });
-                        }
-                        property.SetValue(obj, listInstance);
-                    }
-
-                }
-                else if (property.PropertyType.IsArray)
-                {
-                    var elementType = property.PropertyType.GetElementType();
-                    Array arrayInstance = Array.CreateInstance(elementType, random.Next(10));
-                    for (int i = 0; i < arrayInstance.Length; i++)
-                    {
-                        arrayInstance.SetValue(GenerateRandomObject(elementType), i);
-                    }
-                    property.SetValue(obj, arrayInstance);
-                }
-                else if (property.PropertyType.IsClass)
-                {
-                    property.SetValue(obj, GenerateRandomObject(property.PropertyType));
-                }
+                var defaultAttr = property.GetCustomAttribute<DefaultAttribute>();
+                if (defaultAttr != null)
+                    property.SetValue(obj, defaultAttr.value);
                 else
-                {
-                    throw new Exception($"暂不支持该类型的随机生成{property.PropertyType.FullName}");
-                }
+                    property.SetValue(obj, GenerateDataByType(property.PropertyType, property));
             }
             return obj;
         }
 
-        public static string GenerateRandomString(int length)
+        private string GenerateRandomString(int length)
         {
             Random random = new Random();
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -148,37 +213,47 @@ namespace MockupServer.Response
               .Select(s => s[random.Next(s.Length)]).ToArray());
         }
 
-        public static char GenerateRandomChar()
+        private char GenerateRandomChar()
         {
             Random random = new Random();
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
             return chars[random.Next(chars.Length)];
         }
-
-        public static object GenerateRandomNumber(Type type)
+        private object GenerateRandomNumber(Type type, int min, int? max = null)
         {
             if (type == typeof(int))
-                return random.Next();
+                return random.Next(min, max ?? int.MaxValue);
             else if (type == typeof(double))
-                return random.NextDouble();
+                return random.NextDouble() * random.Next(min, max ?? int.MaxValue);
             else if (type == typeof(decimal))
-                return (decimal)random.NextDouble() + random.Next();
+                return (decimal)random.NextDouble() + random.Next(min, max ?? int.MaxValue);
             else if (type == typeof(float))
-                return random.NextSingle();
+                return random.NextSingle() * random.Next(min, max ?? int.MaxValue);
             else if (type == typeof(long))
-                return random.NextInt64();
+                return random.NextInt64(min, max ?? long.MaxValue);
             else if (type == typeof(short))
-                return random.Next(short.MaxValue);
+                return random.Next(min, max ?? short.MaxValue);
             else if (type == typeof(ushort))
-                return random.Next(ushort.MaxValue);
+                return random.Next(min, max ?? ushort.MaxValue);
             else if (type == typeof(byte))
-                return random.Next(byte.MaxValue);
+                return random.Next(min, max ?? byte.MaxValue);
             else if (type == typeof(sbyte))
-                return random.Next(sbyte.MaxValue);
+                return random.Next(min, max ?? sbyte.MaxValue);
             else
             {
                 return 0;
             }
+        }
+    }
+
+    [AttributeUsage(AttributeTargets.Property)]
+    public class DefaultAttribute:Attribute
+    {
+        public object value;
+
+        public DefaultAttribute(object value)
+        {
+            this.value = value;
         }
     }
 }

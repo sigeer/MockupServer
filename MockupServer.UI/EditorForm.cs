@@ -43,6 +43,16 @@ namespace MockupServer.UI
                 Btn_Formatter.Visible = true;
                 textEditorControl.SetHighlighting("XML");
             }
+            else if (_type == ResponseType.RandomJsonDataFromCSharp)
+            {
+                if (string.IsNullOrEmpty(textEditorControl.Text?.Trim()))
+                {
+                    textEditorControl.Text = GetDefaultCodeForRandom();
+                }
+                Btn_Formatter.Text = "重置";
+                Btn_Formatter.Visible = true;
+                textEditorControl.SetHighlighting("C#");
+            }
             else
             {
                 Btn_Formatter.Visible = false;
@@ -76,6 +86,21 @@ namespace MockupServer.UI
             textEditorControl.Document.FoldingManager.UpdateFoldings(null, null);
         }
 
+        private string GetDefaultCodeForRandom()
+        {
+            return """
+                    // [Default(1)] 设置默认值，不会再使用随机值
+                    // [Range(1, 100)] 设置数字类型的随机取值范围，数组长度的取值范围
+                    // 这个类只能修改data的类型，如果类名与你定义的类名重复，需要修改你定义的类名
+                    public class Root
+                    {
+                        // 将YourClass替换成想要返回的类型（非系统类型须此处定义），最终返回的内容将会是data而不是{data: xxx}
+                        // 不能修改data的名称
+                        public YourClass data { get; set; }
+                        // 添加其他字段属性将没有意义，不会参与读取
+                    }
+                    """ + Environment.NewLine + Environment.NewLine;
+        }
         private void Btn_Formatter_Click(object sender, EventArgs e)
         {
             if (_type == ResponseType.JsonObject)
@@ -131,6 +156,10 @@ namespace MockupServer.UI
                 catch
                 {
                 }
+            }
+            if (_type == ResponseType.RandomJsonDataFromCSharp)
+            {
+                textEditorControl.Text = GetDefaultCodeForRandom();
             }
         }
     }
