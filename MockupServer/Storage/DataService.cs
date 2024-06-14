@@ -2,6 +2,7 @@
 using MockupServer.Models;
 using MockupServer.Response;
 using System.Net;
+using System.Net.Http.Formatting;
 using System.Net.Http.Headers;
 using System.Net.Mime;
 using System.Xml;
@@ -116,6 +117,14 @@ namespace MockupServer.Storage
                     var msg = new HttpResponseMessage(HttpStatusCode.Redirect);
                     msg.Headers.Location = new Uri(content);
                     return msg;
+                case ResponseType.RandomJsonDataFromCSharp:
+                    var fakeRandomJsonContentType = new MediaTypeHeaderValue(MediaTypeNames.Application.Json)
+                    {
+                        CharSet = "utf-8"
+                    };
+                    var obj = CSharpUtility.GenerateObjectByCSharpClass(content);
+                    fakeContent = new ObjectContent<object>(obj, new JsonMediaTypeFormatter(), fakeRandomJsonContentType);
+                    break;
                 default:
                     var errorMsg = $"不正常的ResponseType={type}";
                     throw new Exception(errorMsg);
