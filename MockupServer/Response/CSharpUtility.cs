@@ -10,6 +10,15 @@ namespace MockupServer.Response
     public class CSharpUtility
     {
         static Random random = new Random();
+        static HashSet<Type> numericTypes = new HashSet<Type>
+        {
+            typeof(byte), typeof(sbyte),
+            typeof(short), typeof(ushort),
+            typeof(int), typeof(uint),
+            typeof(long), typeof(ulong),
+            typeof(float), typeof(double),
+            typeof(decimal)
+        };
 
         public static object GenerateObjectByCSharpClass(string inputClassString)
         {
@@ -72,15 +81,52 @@ namespace MockupServer.Response
             // 为每个属性赋予随机字符的值
             foreach (PropertyInfo property in properties)
             {
+                var nullableType = Nullable.GetUnderlyingType(property.PropertyType);
+                var realType = nullableType ?? property.PropertyType;
                 if (property.PropertyType == typeof(string))
                 {
                     // 生成随机字符串并赋值给属性
                     string randomValue = GenerateRandomString(10); // 生成长度为 10 的随机字符串
                     property.SetValue(obj, randomValue);
                 }
-                else if (property.PropertyType == typeof(bool))
+                else if (realType == typeof(bool))
                 {
                     property.SetValue(obj, DateTime.Now.Ticks % 2 == 0);
+                }
+                else if (realType == typeof(char))
+                {
+                    property.SetValue(obj, GenerateRandomChar());
+                }
+                else if (numericTypes.Contains(realType))
+                {
+                    property.SetValue(obj, GenerateRandomNumber(realType));
+                }
+                else if (property.PropertyType.IsGenericType)
+                {
+                    var genericArguments = property.PropertyType.GetGenericArguments();
+                    if (property.PropertyType.GetGenericTypeDefinition() == typeof(List<>))
+                    {
+                        var elementType = genericArguments[0]!;
+                        object listInstance = Activator.CreateInstance(property.PropertyType)!;
+                        var addMethod = property.PropertyType.GetMethod("Add")!;
+                        var listLength = random.Next(10);
+                        for (int i = 0; i < listLength; i++)
+                        {
+                            addMethod.Invoke(listInstance, new object[] { GenerateRandomObject(elementType) });
+                        }
+                        property.SetValue(obj, listInstance);
+                    }
+
+                }
+                else if (property.PropertyType.IsArray)
+                {
+                    var elementType = property.PropertyType.GetElementType();
+                    Array arrayInstance = Array.CreateInstance(elementType, random.Next(10));
+                    for (int i = 0; i < arrayInstance.Length; i++)
+                    {
+                        arrayInstance.SetValue(GenerateRandomObject(elementType), i);
+                    }
+                    property.SetValue(obj, arrayInstance);
                 }
                 else if (property.PropertyType.IsClass)
                 {
@@ -88,7 +134,7 @@ namespace MockupServer.Response
                 }
                 else
                 {
-                    property.SetValue(obj, GenerateRandomNumber(property.PropertyType));
+                    throw new Exception($"暂不支持该类型的随机生成{property.PropertyType.FullName}");
                 }
             }
             return obj;
@@ -102,6 +148,13 @@ namespace MockupServer.Response
               .Select(s => s[random.Next(s.Length)]).ToArray());
         }
 
+        public static char GenerateRandomChar()
+        {
+            Random random = new Random();
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            return chars[random.Next(chars.Length)];
+        }
+
         public static object GenerateRandomNumber(Type type)
         {
             if (type == typeof(int))
@@ -109,10 +162,7 @@ namespace MockupServer.Response
             else if (type == typeof(double))
                 return random.NextDouble();
             else if (type == typeof(decimal))
-            {
-                byte scale = (byte)random.Next(29);
-                return new decimal(random.Next(), random.Next(), random.Next(), false, scale);
-            }
+                return (decimal)random.NextDouble() + random.Next();
             else if (type == typeof(float))
                 return random.NextSingle();
             else if (type == typeof(long))
