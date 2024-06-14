@@ -24,6 +24,7 @@ namespace MockupServer.Response
         {
             string code = $@"
         using System;
+        using System.Collections.Generic;
 
         namespace DynamicNamespace
         {{
@@ -65,10 +66,18 @@ namespace MockupServer.Response
 
                         // 使用反射获取类
                         var dynamicClassType = assembly.GetTypes();
-                        var rootType = dynamicClassType.FirstOrDefault(x => x.Name == "Root");
-                        if (rootType == null)
-                            throw new Exception("至少要有一个Root类");
-                        return GenerateRandomObject(rootType);
+                        var rootTypes = dynamicClassType.Where(x => x.Name == "Root");
+                        if (rootTypes.Count() == 0)
+                            throw new Exception("没找到Root类");
+
+                        if (rootTypes.Count() > 1)
+                            throw new Exception("重复声明了Root类");
+
+                        var entryProperty = rootTypes.First()!.GetProperty("data");
+                        if (entryProperty == null)
+                            throw new Exception("Root类中没找到data属性");
+
+                        return GenerateDataByType(entryProperty.PropertyType);
                     }
                     catch (Exception ex)
                     {
@@ -78,7 +87,74 @@ namespace MockupServer.Response
             }
         }
 
-        public static object GenerateRandomObject(Type responseType)
+        public static object GenerateDataByType(Type propertyType)
+        {
+            var nullableType = Nullable.GetUnderlyingType(propertyType);
+            var realType = nullableType ?? propertyType;
+            if (propertyType == typeof(string))
+            {
+                return GenerateRandomString(10);
+            }
+            else if (realType == typeof(bool))
+            {
+                return DateTime.Now.Ticks % 2 == 0;
+            }
+            else if (realType == typeof(char))
+            {
+                return GenerateRandomChar();
+            }
+            else if (numericTypes.Contains(realType))
+            {
+                return GenerateRandomNumber(realType);
+            }
+            else if (propertyType.IsGenericType)
+            {
+                var genericArguments = propertyType.GetGenericArguments();
+                if (propertyType.GetGenericTypeDefinition() == typeof(List<>))
+                {
+                    var elementType = genericArguments[0]!;
+                    object listInstance = Activator.CreateInstance(propertyType)!;
+                    var addMethod = propertyType.GetMethod("Add")!;
+                    var listLength = random.Next(10);
+                    for (int i = 0; i < listLength; i++)
+                    {
+                        addMethod.Invoke(listInstance, new object[] { GenerateDataByType(elementType) });
+                    }
+                    return listInstance;
+                }
+                if (propertyType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+                {
+                    var keyType = genericArguments[0];
+                    var valueType = Nullable.GetUnderlyingType(genericArguments[1]) ?? genericArguments[1];
+                    object listInstance = Activator.CreateInstance(propertyType)!;
+                    var addMethod = propertyType.GetMethod("Add")!;
+                    var listLength = random.Next(10);
+                    for (int i = 0; i < listLength; i++)
+                    {
+                        addMethod.Invoke(listInstance, new object[] { GenerateDataByType(keyType), GenerateDataByType(valueType) });
+                    }
+                    return listInstance;
+                }
+
+            }
+            else if (propertyType.IsArray)
+            {
+                var elementType = propertyType.GetElementType()!;
+                Array arrayInstance = Array.CreateInstance(elementType, random.Next(10));
+                for (int i = 0; i < arrayInstance.Length; i++)
+                {
+                    arrayInstance.SetValue(GenerateDataByType(elementType), i);
+                }
+                return arrayInstance;
+            }
+            else if (propertyType.IsClass)
+            {
+                return GenerateRandomObject(propertyType);
+            }
+            throw new Exception($"暂不支持该类型的随机生成{propertyType.FullName}");
+        }
+
+        private static object GenerateRandomObject(Type responseType)
         {
             object obj = Activator.CreateInstance(responseType);
 
@@ -88,66 +164,12 @@ namespace MockupServer.Response
             // 为每个属性赋予随机字符的值
             foreach (PropertyInfo property in properties)
             {
-                var nullableType = Nullable.GetUnderlyingType(property.PropertyType);
-                var realType = nullableType ?? property.PropertyType;
-                if (property.PropertyType == typeof(string))
-                {
-                    // 生成随机字符串并赋值给属性
-                    string randomValue = GenerateRandomString(10); // 生成长度为 10 的随机字符串
-                    property.SetValue(obj, randomValue);
-                }
-                else if (realType == typeof(bool))
-                {
-                    property.SetValue(obj, DateTime.Now.Ticks % 2 == 0);
-                }
-                else if (realType == typeof(char))
-                {
-                    property.SetValue(obj, GenerateRandomChar());
-                }
-                else if (numericTypes.Contains(realType))
-                {
-                    property.SetValue(obj, GenerateRandomNumber(realType));
-                }
-                else if (property.PropertyType.IsGenericType)
-                {
-                    var genericArguments = property.PropertyType.GetGenericArguments();
-                    if (property.PropertyType.GetGenericTypeDefinition() == typeof(List<>))
-                    {
-                        var elementType = genericArguments[0]!;
-                        object listInstance = Activator.CreateInstance(property.PropertyType)!;
-                        var addMethod = property.PropertyType.GetMethod("Add")!;
-                        var listLength = random.Next(10);
-                        for (int i = 0; i < listLength; i++)
-                        {
-                            addMethod.Invoke(listInstance, new object[] { GenerateRandomObject(elementType) });
-                        }
-                        property.SetValue(obj, listInstance);
-                    }
-
-                }
-                else if (property.PropertyType.IsArray)
-                {
-                    var elementType = property.PropertyType.GetElementType();
-                    Array arrayInstance = Array.CreateInstance(elementType, random.Next(10));
-                    for (int i = 0; i < arrayInstance.Length; i++)
-                    {
-                        arrayInstance.SetValue(GenerateRandomObject(elementType), i);
-                    }
-                    property.SetValue(obj, arrayInstance);
-                }
-                else if (property.PropertyType.IsClass)
-                {
-                    property.SetValue(obj, GenerateRandomObject(property.PropertyType));
-                }
-                else
-                {
-                    throw new Exception($"暂不支持该类型的随机生成{property.PropertyType.FullName}");
-                }
+                property.SetValue(obj, GenerateDataByType(property.PropertyType));
             }
             return obj;
         }
 
-        public static string GenerateRandomString(int length)
+        private static string GenerateRandomString(int length)
         {
             Random random = new Random();
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -155,14 +177,14 @@ namespace MockupServer.Response
               .Select(s => s[random.Next(s.Length)]).ToArray());
         }
 
-        public static char GenerateRandomChar()
+        private static char GenerateRandomChar()
         {
             Random random = new Random();
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
             return chars[random.Next(chars.Length)];
         }
 
-        public static object GenerateRandomNumber(Type type)
+        private static object GenerateRandomNumber(Type type)
         {
             if (type == typeof(int))
                 return random.Next();

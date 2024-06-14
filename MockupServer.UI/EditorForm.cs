@@ -43,6 +43,23 @@ namespace MockupServer.UI
                 Btn_Formatter.Visible = true;
                 textEditorControl.SetHighlighting("XML");
             }
+            else if (_type == ResponseType.RandomJsonDataFromCSharp)
+            {
+                if (string.IsNullOrEmpty(textEditorControl.Text?.Trim()))
+                {
+                    textEditorControl.Text = """
+                    // 这个类只能修改data的类型，如果类名与你定义的类名重复，需要修改你定义的类名
+                    public class Root
+                    {
+                        // 将YourClass替换成想要返回的类型（非系统类型须此处定义），最终返回的内容将会是data而不是{data: xxx}
+                        // 不能修改data的名称
+                        publict YourClass data { get; set; }
+                        // 添加其他字段属性将没有意义，不会参与读取
+                    }
+                    """ + Environment.NewLine + Environment.NewLine;
+                }
+                textEditorControl.SetHighlighting("C#");
+            }
             else
             {
                 Btn_Formatter.Visible = false;
