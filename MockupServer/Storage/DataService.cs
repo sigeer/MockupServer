@@ -122,7 +122,7 @@ namespace MockupServer.Storage
                     {
                         CharSet = "utf-8"
                     };
-                    var obj = CSharpUtility.GenerateObjectByCSharpClass(content);
+                    var obj = new CSharpUtility().GenerateObjectByCSharpClass(content);
                     fakeContent = new ObjectContent<object>(obj, new JsonMediaTypeFormatter(), fakeRandomJsonContentType);
                     break;
                 default:
@@ -155,6 +155,7 @@ namespace MockupServer.Storage
         {
             kw = kw.Replace("?", "\\?").Replace("&", "\\&");
             var total = await _freeSql.Select<MockupObject>().Where(x => x.RequestUrl.Contains(kw)).ToListAsync();
+            total.Reverse();
             return total;
         }
     }
