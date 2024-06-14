@@ -43,6 +43,12 @@ namespace MockupServer.UI
                 Btn_Formatter.Visible = true;
                 textEditorControl.SetHighlighting("XML");
             }
+            else if (_type == ResponseType.RandomJsonDataFromCSharp)
+            {
+                Btn_Formatter.Text = "格式化（C#）";
+                Btn_Formatter.Visible = true;
+                textEditorControl.SetHighlighting("C#");
+            }
             else
             {
                 Btn_Formatter.Visible = false;
