@@ -53,20 +53,27 @@ namespace MockupServer.Response
                     {
                         Console.Error.WriteLine(diagnostic.ToString());
                     }
-                    return new { text = "error" };
+                    return new { text = "error", message = string.Join(Environment.NewLine, result.Diagnostics.Select(x => x.ToString())) };
                 }
                 else
                 {
-                    // 编译成功，加载程序集
-                    ms.Seek(0, SeekOrigin.Begin);
-                    Assembly assembly = Assembly.Load(ms.ToArray());
+                    try
+                    {
+                        // 编译成功，加载程序集
+                        ms.Seek(0, SeekOrigin.Begin);
+                        Assembly assembly = Assembly.Load(ms.ToArray());
 
-                    // 使用反射获取类
-                    var dynamicClassType = assembly.GetTypes();
-                    var rootType = dynamicClassType.FirstOrDefault(x => x.Name == "Root");
-                    if (rootType == null)
-                        throw new Exception("至少要有一个Root类");
-                    return GenerateRandomObject(rootType);
+                        // 使用反射获取类
+                        var dynamicClassType = assembly.GetTypes();
+                        var rootType = dynamicClassType.FirstOrDefault(x => x.Name == "Root");
+                        if (rootType == null)
+                            throw new Exception("至少要有一个Root类");
+                        return GenerateRandomObject(rootType);
+                    }
+                    catch (Exception ex)
+                    {
+                        return new { text = "error", message = ex.Message };
+                    }
                 }
             }
         }
