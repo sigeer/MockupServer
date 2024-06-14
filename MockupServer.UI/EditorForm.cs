@@ -47,17 +47,10 @@ namespace MockupServer.UI
             {
                 if (string.IsNullOrEmpty(textEditorControl.Text?.Trim()))
                 {
-                    textEditorControl.Text = """
-                    // 这个类只能修改data的类型，如果类名与你定义的类名重复，需要修改你定义的类名
-                    public class Root
-                    {
-                        // 将YourClass替换成想要返回的类型（非系统类型须此处定义），最终返回的内容将会是data而不是{data: xxx}
-                        // 不能修改data的名称
-                        publict YourClass data { get; set; }
-                        // 添加其他字段属性将没有意义，不会参与读取
-                    }
-                    """ + Environment.NewLine + Environment.NewLine;
+                    textEditorControl.Text = GetDefaultCodeForRandom();
                 }
+                Btn_Formatter.Text = "重置";
+                Btn_Formatter.Visible = true;
                 textEditorControl.SetHighlighting("C#");
             }
             else
@@ -93,6 +86,19 @@ namespace MockupServer.UI
             textEditorControl.Document.FoldingManager.UpdateFoldings(null, null);
         }
 
+        private string GetDefaultCodeForRandom()
+        {
+            return """
+                    // 这个类只能修改data的类型，如果类名与你定义的类名重复，需要修改你定义的类名
+                    public class Root
+                    {
+                        // 将YourClass替换成想要返回的类型（非系统类型须此处定义），最终返回的内容将会是data而不是{data: xxx}
+                        // 不能修改data的名称
+                        publict YourClass data { get; set; }
+                        // 添加其他字段属性将没有意义，不会参与读取
+                    }
+                    """ + Environment.NewLine + Environment.NewLine;
+        }
         private void Btn_Formatter_Click(object sender, EventArgs e)
         {
             if (_type == ResponseType.JsonObject)
@@ -148,6 +154,10 @@ namespace MockupServer.UI
                 catch
                 {
                 }
+            }
+            if (_type == ResponseType.RandomJsonDataFromCSharp)
+            {
+                textEditorControl.Text = GetDefaultCodeForRandom();
             }
         }
     }
