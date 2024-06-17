@@ -101,15 +101,22 @@ namespace MockupServer.Response
             }
         }
 
-        public object GenerateDataByType(Type propertyType, PropertyInfo? propertyInfo = null)
+        public object? GenerateDataByType(Type propertyType, PropertyInfo? propertyInfo = null)
         {
             var rangeAttr = propertyInfo?.GetCustomAttribute<RangeAttribute>();
             int min = (int?)rangeAttr?.Minimum ?? 0; int max = (int?)rangeAttr?.Maximum ?? random.Next(10);
 
             var nullableType = Nullable.GetUnderlyingType(propertyType);
             var realType = nullableType ?? propertyType;
+
+            if (nullableType != null && random.NextDouble() < 0.2)
+                return null;
+
             if (propertyType == typeof(string))
             {
+                if (random.NextDouble() < 0.2)
+                    return null;
+
                 return GenerateRandomString(max);
             }
             else if (realType == typeof(bool))
@@ -140,7 +147,7 @@ namespace MockupServer.Response
                     var listLength = random.Next(min, max );
                     for (int i = 0; i < listLength; i++)
                     {
-                        addMethod.Invoke(listInstance, new object[] { GenerateDataByType(elementType) });
+                        addMethod.Invoke(listInstance, new object?[] { GenerateDataByType(elementType) });
                     }
                     return listInstance;
                 }
@@ -153,7 +160,7 @@ namespace MockupServer.Response
                     var listLength = random.Next(min, max);
                     for (int i = 0; i < listLength; i++)
                     {
-                        addMethod.Invoke(dictionary, new object[] { GenerateDataByType(keyType), GenerateDataByType(valueType) });
+                        addMethod.Invoke(dictionary, new object?[] { GenerateDataByType(keyType)!, GenerateDataByType(valueType) });
                     }
                     return dictionary;
                 }
@@ -180,15 +187,14 @@ namespace MockupServer.Response
         }
 
 
-        public object GenerateDataByProperty(PropertyInfo propery)
+        public object? GenerateDataByProperty(PropertyInfo propery)
         {
-            var rangeAttr = propery.GetCustomAttribute<RangeAttribute>();
             return GenerateDataByType(propery.PropertyType, propery);
         }
 
         private object GenerateRandomObject(Type responseType)
         {
-            object obj = Activator.CreateInstance(responseType);
+            object obj = Activator.CreateInstance(responseType)!;
 
             // 获取所有公共属性
             PropertyInfo[] properties = responseType.GetProperties();
