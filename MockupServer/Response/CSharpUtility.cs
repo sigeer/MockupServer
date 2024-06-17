@@ -104,7 +104,8 @@ namespace MockupServer.Response
         public object? GenerateDataByType(Type propertyType, PropertyInfo? propertyInfo = null)
         {
             var rangeAttr = propertyInfo?.GetCustomAttribute<RangeAttribute>();
-            int min = (int?)rangeAttr?.Minimum ?? 0; int max = (int?)rangeAttr?.Maximum ?? random.Next(10);
+            int min = (int?)rangeAttr?.Minimum ?? 0; 
+            int lengthMax = (int?)rangeAttr?.Maximum ?? random.Next(10);
 
             var nullableType = Nullable.GetUnderlyingType(propertyType);
             var realType = nullableType ?? propertyType;
@@ -117,7 +118,7 @@ namespace MockupServer.Response
                 if (random.NextDouble() < 0.2)
                     return null;
 
-                return GenerateRandomString(max);
+                return GenerateRandomString(lengthMax);
             }
             else if (realType == typeof(bool))
             {
@@ -133,7 +134,7 @@ namespace MockupServer.Response
             }
             else if (numericTypes.Contains(realType))
             {
-                return GenerateRandomNumber(realType, min, max);
+                return GenerateRandomNumber(realType, min, (int?)rangeAttr?.Maximum);
             }
             else if (propertyType.IsGenericType)
             {
@@ -144,7 +145,7 @@ namespace MockupServer.Response
                     var elementType = genericArguments[0]!;
                     object listInstance = Activator.CreateInstance(propertyType)!;
                     var addMethod = propertyType.GetMethod("Add")!;
-                    var listLength = random.Next(min, max );
+                    var listLength = random.Next(min, lengthMax);
                     for (int i = 0; i < listLength; i++)
                     {
                         addMethod.Invoke(listInstance, new object?[] { GenerateDataByType(elementType) });
@@ -157,7 +158,7 @@ namespace MockupServer.Response
                     var valueType = Nullable.GetUnderlyingType(genericArguments[1]) ?? genericArguments[1];
                     object dictionary = Activator.CreateInstance(propertyType)!;
                     var addMethod = propertyType.GetMethod("Add")!;
-                    var listLength = random.Next(min, max);
+                    var listLength = random.Next(min, lengthMax);
                     for (int i = 0; i < listLength; i++)
                     {
                         addMethod.Invoke(dictionary, new object?[] { GenerateDataByType(keyType)!, GenerateDataByType(valueType) });
@@ -172,7 +173,7 @@ namespace MockupServer.Response
             else if (propertyType.IsArray)
             {
                 var elementType = propertyType.GetElementType()!;
-                Array arrayInstance = Array.CreateInstance(elementType, random.Next(min, max));
+                Array arrayInstance = Array.CreateInstance(elementType, random.Next(min, lengthMax));
                 for (int i = 0; i < arrayInstance.Length; i++)
                 {
                     arrayInstance.SetValue(GenerateDataByType(elementType), i);
