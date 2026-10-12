@@ -119,7 +119,7 @@
             MenuItem_CopyUrl.Text = "复制请求URL";
             MenuItem_CopyUrl.Click += MenuItem_CopyUrl_Click;
             // 
-            // CachedRecordForm
+            // DataManageForm
             // 
             AutoScaleDimensions = new SizeF(7F, 17F);
             AutoScaleMode = AutoScaleMode.Font;
@@ -129,10 +129,10 @@
             Controls.Add(TxtFilter);
             Controls.Add(label1);
             Controls.Add(DataGridViewMain);
-            Name = "CachedRecordForm";
+            Name = "DataManageForm";
             StartPosition = FormStartPosition.CenterParent;
             Text = "模拟数据 - 管理";
-            Load += CachedRecordForm_Load;
+            Load += DataManageForm_Load;
             ((System.ComponentModel.ISupportInitialize)DataGridViewMain).EndInit();
             MenuData.ResumeLayout(false);
             ResumeLayout(false);

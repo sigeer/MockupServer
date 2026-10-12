@@ -2,6 +2,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using MockupServer.Models;
 using MockupServer.Storage;
+using Serilog;
 
 namespace MockupServer.UI
 {
@@ -18,73 +19,106 @@ namespace MockupServer.UI
 
             InitializeComponent();
             SetFormStatus(false);
+            FormClosing += Form1_FormClosing;
+        }
+
+        private void Form1_FormClosing(object? sender, FormClosingEventArgs e)
+        {
+            try
+            {
+                _webApp?.StopServerAsync().GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "关闭时停止服务器失败");
+            }
+            finally
+            {
+                _webApp = null;
+                Log.CloseAndFlush();
+            }
         }
 
         private void BtnMockupDataForm_Click(object sender, EventArgs e)
         {
-            var form = new DataManageForm(_dataService);
+            using var form = new DataManageForm(_dataService);
             form.ShowDialog();
         }
 
         private void BtnStart_Click(object sender, EventArgs e)
         {
             if (string.IsNullOrEmpty(TxtPort.Text)
-                || !int.TryParse(TxtPort.Text, out int port))
+                || !int.TryParse(TxtPort.Text, out var port))
             {
                 Alert.Show("请完成所有内容");
                 return;
             }
 
+            // UI 线程先禁用按钮，防止双击启动多个 host
+            BtnStart.Enabled = false;
+
             Task.Run(async () =>
             {
+                IHost? host = null;
                 try
                 {
-                    Invoke(() =>
-                    {
-                        BtnStart.Enabled = false;
-                    });
-                    _global = await SaveAndReadOption();
+                    _global = await SaveAndReadOption(port);
 
-                    _webApp = WebServerService.Create(_global);
-                    await _webApp.StartServerAsync();
+                    host = WebServerService.Create(_global);
+                    await host.StartServerAsync();
                     BeginInvoke(() =>
                     {
+                        _webApp = host;
                         Alert.Show("服务器已启动");
                         SetFormStatus(true);
                     });
                 }
                 catch (Exception ex)
                 {
-                    Invoke(() =>
+                    _logger.LogError(ex, "启动服务器失败");
+                    if (host != null)
                     {
-                        SetFormStatus(false);
-                    });
-                    _logger.LogError(ex.ToString());
-                    await _webApp.StopServerAysnc();
-                    Alert.Show(ex.ToString());
+                        try { await host.StopServerAsync(); } catch { /* 启动失败时尽力停止 */ }
+                    }
+                    if (IsHandleCreated && !IsDisposed)
+                    {
+                        BeginInvoke(() =>
+                        {
+                            SetFormStatus(false);
+                            Alert.Show(ex.ToString());
+                        });
+                    }
                 }
             });
-
         }
 
-        private async Task<GlobalCache> SaveAndReadOption()
+        private async Task<GlobalCache> SaveAndReadOption(int port)
         {
             _global ??= await _dataService.GetGlobal();
-            if (int.TryParse(TxtPort.Text, out int port))
-            {
-                _global.ListenerPort = port;
-                await _dataService.SaveGlobal(_global);
-            }
+            _global.ListenerPort = port;
+            await _dataService.SaveGlobal(_global);
             return _global;
         }
 
         private async void BtnStop_Click(object sender, EventArgs e)
         {
-            if (_webApp != null)
+            if (_webApp == null)
+                return;
+
+            try
             {
-                await _webApp.StopServerAysnc();
+                var host = _webApp;
                 _webApp = null;
+                await host.StopServerAsync();
                 Alert.Show("服务器已停止");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "停止服务器失败");
+                Alert.Show(ex.ToString());
+            }
+            finally
+            {
                 SetFormStatus(false);
             }
         }
@@ -101,10 +135,13 @@ namespace MockupServer.UI
         {
             _global = await _dataService.GetGlobal();
 
-            BeginInvoke(() =>
+            if (IsHandleCreated && !IsDisposed)
             {
-                TxtPort.Text = _global.ListenerPort.ToString();
-            });
+                BeginInvoke(() =>
+                {
+                    TxtPort.Text = _global.ListenerPort.ToString();
+                });
+            }
         }
 
         private void SetFormStatus(bool isStarted)
@@ -113,12 +150,13 @@ namespace MockupServer.UI
             BtnStop.Enabled = isStarted;
 
             TxtPort.Enabled = !isStarted;
-            Label_ServerInfo.Text = isStarted ? $"http://localhost:{_global?.ListenerPort}": "";
+            Label_ServerInfo.Text = isStarted ? $"http://localhost:{_global?.ListenerPort}" : "";
         }
 
         private void Btn_DomainManage_Click(object sender, EventArgs e)
         {
-            new DomainManageForm(_dataService).ShowDialog();
+            using var form = new DomainManageForm(_dataService);
+            form.ShowDialog();
         }
     }
 }

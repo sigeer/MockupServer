@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using MockupServer.Models;
 using MockupServer.Response;
+using Newtonsoft.Json;
 using System.Net;
-using System.Net.Http.Formatting;
 using System.Net.Http.Headers;
 using System.Net.Mime;
 using System.Xml;
@@ -12,6 +12,11 @@ namespace MockupServer.Storage
 {
     public class DataService
     {
+        static readonly TimeSpan DomainCacheTtl = TimeSpan.FromSeconds(3);
+        static readonly object DomainCacheLock = new();
+        static List<Domain>? _domainCache;
+        static long _domainCacheTicks;
+
         readonly IFreeSql _freeSql;
         readonly ILogger<DataService> _logger;
 
@@ -23,18 +28,40 @@ namespace MockupServer.Storage
 
         public async Task<List<Domain>> GetDomainList()
         {
-            return await _freeSql.Select<Domain>().ToListAsync();
+            lock (DomainCacheLock)
+            {
+                if (_domainCache != null && Environment.TickCount64 - _domainCacheTicks < DomainCacheTtl.TotalMilliseconds)
+                    return _domainCache;
+            }
+
+            var list = await _freeSql.Select<Domain>().ToListAsync();
+            lock (DomainCacheLock)
+            {
+                _domainCache = list;
+                _domainCacheTicks = Environment.TickCount64;
+            }
+            return list;
+        }
+
+        static void InvalidateDomainCache()
+        {
+            lock (DomainCacheLock)
+            {
+                _domainCache = null;
+            }
         }
 
         public async Task<Domain> InsertOrUpdateDomain(Domain model)
         {
             await _freeSql.InsertOrUpdate<Domain>().SetSource(model).ExecuteAffrowsAsync();
+            InvalidateDomainCache();
             return model;
         }
 
         public async Task DeleteDomain(string urlPrefix)
         {
             await _freeSql.Delete<Domain>().Where(x => x.UrlPrefix == urlPrefix).ExecuteAffrowsAsync();
+            InvalidateDomainCache();
         }
 
         public async Task<GlobalCache> GetGlobal()
@@ -44,13 +71,16 @@ namespace MockupServer.Storage
             {
                 model = new GlobalCache();
                 await _freeSql.Insert<GlobalCache>(model).ExecuteAffrowsAsync();
+                // 插入后重查，降低并发下拿到未落盘对象/重复行的概率
+                model = await _freeSql.Select<GlobalCache>().ToOneAsync() ?? model;
             }
             return model;
         }
 
         public async Task<GlobalCache> SaveGlobal(GlobalCache model)
         {
-            var ds = await _freeSql.Update<GlobalCache>().WhereIf(true, x => true).Set(x => x.ListenerPort, model.ListenerPort).ExecuteAffrowsAsync();
+            // 表语义为单行配置，无主键，更新全部行
+            await _freeSql.Update<GlobalCache>().Where(x => true).Set(x => x.ListenerPort, model.ListenerPort).ExecuteAffrowsAsync();
             return model;
         }
 
@@ -66,12 +96,25 @@ namespace MockupServer.Storage
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex.ToString());
+                _logger.LogError(ex, "生成Mock响应失败：{Method} {Url}", method, relativeUrl);
                 return null;
             }
         }
 
-        static internal HttpResponseMessage GenerateResponseMessage(ResponseType type, string? content)
+        static MediaTypeHeaderValue CreateUtf8MediaType(string mediaType)
+        {
+            return new MediaTypeHeaderValue(mediaType)
+            {
+                CharSet = "utf-8"
+            };
+        }
+
+        static HttpContent CreateUtf8Content(string mediaType, string content)
+        {
+            return new StringContent(content, CreateUtf8MediaType(mediaType));
+        }
+
+        internal HttpResponseMessage GenerateResponseMessage(ResponseType type, string? content)
         {
             if (content == null)
                 return new HttpResponseMessage(HttpStatusCode.NoContent);
@@ -82,19 +125,10 @@ namespace MockupServer.Storage
                 case ResponseType.Empty:
                     return new HttpResponseMessage(HttpStatusCode.NoContent);
                 case ResponseType.JsonObject:
-                    var fakeContentType = new MediaTypeHeaderValue(MediaTypeNames.Application.Json)
-                    {
-                        CharSet = "utf-8"
-                    };
-                    // fakeContent = new ObjectContent<object>(JsonConvert.DeserializeObject(data.ResponseData ?? "{}") ?? new object { }, new JsonMediaTypeFormatter(), fakeContentType);
-                    fakeContent = new StringContent(content, fakeContentType);
+                    fakeContent = CreateUtf8Content(MediaTypeNames.Application.Json, content);
                     break;
                 case ResponseType.Text:
-                    var textContentType = new MediaTypeHeaderValue(MediaTypeNames.Text.Plain)
-                    {
-                        CharSet = "utf-8"
-                    };
-                    fakeContent = new StringContent(content, textContentType);
+                    fakeContent = CreateUtf8Content(MediaTypeNames.Text.Plain, content);
                     break;
                 case ResponseType.File:
                     if (!File.Exists(content))
@@ -104,39 +138,32 @@ namespace MockupServer.Storage
                     fakeContent.Headers.ContentType = new MediaTypeHeaderValue(content.GetMimeTypeByFileName());
                     break;
                 case ResponseType.XmlObject:
-                    var xmlContentType = new MediaTypeHeaderValue(MediaTypeNames.Application.Xml)
-                    {
-                        CharSet = "utf-8"
-                    };
                     XmlDocument xmlDoc = new XmlDocument();
                     xmlDoc.LoadXml(content);
 
-                    fakeContent = new StringContent(xmlDoc.InnerXml, xmlContentType);
+                    fakeContent = CreateUtf8Content(MediaTypeNames.Application.Xml, xmlDoc.InnerXml);
                     break;
                 case ResponseType.Redirect:
                     var msg = new HttpResponseMessage(HttpStatusCode.Redirect);
                     msg.Headers.Location = new Uri(content);
                     return msg;
                 case ResponseType.RandomJsonDataFromCSharp:
-                    var fakeRandomJsonContentType = new MediaTypeHeaderValue(MediaTypeNames.Application.Json)
-                    {
-                        CharSet = "utf-8"
-                    };
-                    var obj = new CSharpUtility().GenerateObjectByCSharpClass(content);
-                    fakeContent = new ObjectContent<object>(obj, new JsonMediaTypeFormatter(), fakeRandomJsonContentType);
+                    var obj = new CSharpUtility(_logger).GenerateObjectByCSharpClass(content);
+                    fakeContent = CreateUtf8Content(MediaTypeNames.Application.Json, JsonConvert.SerializeObject(obj));
                     break;
                 default:
-                    var errorMsg = $"不正常的ResponseType={type}";
-                    throw new Exception(errorMsg);
+                    throw new Exception($"不正常的ResponseType={type}");
             }
             return new HttpResponseMessage(HttpStatusCode.OK) { Content = fakeContent };
         }
 
-        public async Task InserOrUpdateRecord(string url, string method, int type, string res)
+        public async Task InsertOrUpdateRecord(string url, string method, int type, string? res)
         {
             var model = new MockupObject(url, method, type, res);
 
-            var sameItem = await _freeSql.Select<MockupObject>().Where<MockupObject>(x => x.RequestUrl == model.RequestUrl && x.Method == model.Method).ToOneAsync();
+            var sameItem = await _freeSql.Select<MockupObject>()
+                .Where(x => x.RequestUrl == model.RequestUrl && x.Method == model.Method)
+                .ToOneAsync();
             if (sameItem == null)
                 await _freeSql.Insert<MockupObject>(model).ExecuteAffrowsAsync();
             else
@@ -150,11 +177,13 @@ namespace MockupServer.Storage
             await _freeSql.Delete<MockupObject>().Where(x => x.RequestUrl == url && x.Method == method).ExecuteAffrowsAsync();
         }
 
-
         public async Task<List<MockupObject>> GetDataList(string kw)
         {
-            kw = kw.Replace("?", "\\?").Replace("&", "\\&");
-            var total = await _freeSql.Select<MockupObject>().Where(x => x.RequestUrl.Contains(kw)).ToListAsync();
+            var query = _freeSql.Select<MockupObject>();
+            if (!string.IsNullOrEmpty(kw))
+                query = query.Where(x => x.RequestUrl.Contains(kw));
+
+            var total = await query.ToListAsync();
             total.Reverse();
             return total;
         }

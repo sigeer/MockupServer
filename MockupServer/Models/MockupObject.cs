@@ -1,4 +1,4 @@
-﻿using FreeSql.DataAnnotations;
+using FreeSql.DataAnnotations;
 
 namespace MockupServer.Models
 {
@@ -9,27 +9,21 @@ namespace MockupServer.Models
         public string Method { get; set; } = "GET";
 
         /// <summary>
-        /// 0. Empty
-        /// 1. Json
-        /// 2. Text
-        /// 3. File
-        /// 4. Xml
+        /// 对应 <see cref="ResponseType"/>：0. Empty 1. JsonObject 2. Text 3. File 4. XmlObject 5. Redirect 6. RandomJsonDataFromCSharp
         /// </summary>
         public int ResponseType { get; set; } = 1;
         /// <summary>
         /// Empty: null
-        /// Json, JsonString
-        /// Text: String,
-        /// File: FilePath,
-        /// Xml: XmlString
+        /// JsonObject, Text: 字符串内容
+        /// File: 文件路径
+        /// XmlObject: Xml字符串
+        /// Redirect: 跳转地址
+        /// RandomJsonDataFromCSharp: C#类定义代码
         /// </summary>
         public string? ResponseData { get; set; }
-        /// <summary>
-        /// ResponseData为null，或者UseRandomGenerate为true时，返回随机数据
-        /// </summary>
-        // public bool UseRandomGenerate { get; set; } = false;
 
-        public MockupObject(string requestUrl, string method, int responseType, string? responseData)        {
+        public MockupObject(string requestUrl, string method, int responseType, string? responseData)
+        {
             RequestUrl = requestUrl;
             Method = method;
             ResponseType = responseType;
@@ -41,6 +35,5 @@ namespace MockupServer.Models
         {
             return new MockupObject();
         }
-
     }
 }
