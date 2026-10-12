@@ -152,7 +152,7 @@
             Name = "DataEditForm";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "模拟数据 - 编辑";
-            Load += InsertRecordForm_Load;
+            Load += DataEditForm_Load;
             ResumeLayout(false);
             PerformLayout();
         }

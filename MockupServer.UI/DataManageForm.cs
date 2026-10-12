@@ -12,8 +12,6 @@ namespace MockupServer.UI
         {
             _coreService = dataService;
             InitializeComponent();
-
-            MenuItem_CopyUrl.Visible = State.IsRunning;
         }
 
         private void BtnSearch_Click(object sender, EventArgs e)
@@ -23,12 +21,12 @@ namespace MockupServer.UI
 
         private void BtnAdd_Click(object sender, EventArgs e)
         {
-            var form = new DataEditForm(MockupObject.Empty(), _coreService);
+            using var form = new DataEditForm(MockupObject.Empty(), _coreService);
             form.ShowDialog();
             LoadDataGridView();
         }
 
-        private void CachedRecordForm_Load(object sender, EventArgs e)
+        private void DataManageForm_Load(object sender, EventArgs e)
         {
             DataGridViewMain.Columns.Add(new DataGridViewColumn()
             {
@@ -61,84 +59,136 @@ namespace MockupServer.UI
             LoadDataGridView();
         }
 
+        protected override void OnShown(EventArgs e)
+        {
+            base.OnShown(e);
+            MenuItem_CopyUrl.Visible = State.IsRunning;
+        }
+
+        private bool TryGetSelectedRow(out DataGridViewRow? selectedRow)
+        {
+            selectedRow = null;
+            if (DataGridViewMain.SelectedCells.Count == 0)
+                return false;
+
+            var rowIndex = DataGridViewMain.SelectedCells[0].RowIndex;
+            if (rowIndex < 0 || rowIndex >= DataGridViewMain.Rows.Count)
+                return false;
+
+            selectedRow = DataGridViewMain.Rows[rowIndex];
+            return true;
+        }
+
         private void LoadDataGridView()
         {
+            var filter = TxtFilter.Text;
             Task.Run(async () =>
             {
-                var total = await _coreService.GetDataList(TxtFilter.Text);
+                var total = await _coreService.GetDataList(filter);
 
-                BeginInvoke(() =>
+                if (IsHandleCreated && !IsDisposed)
                 {
-                    DataGridViewMain.Rows.Clear();
-                    total.ForEach(item =>
+                    BeginInvoke(() =>
                     {
-                        var row = new DataGridViewRow();
-                        row.Cells.Add(new DataGridViewTextBoxCell()
+                        DataGridViewMain.Rows.Clear();
+                        total.ForEach(item =>
                         {
-                            Value = item.RequestUrl,
-                            ValueType = typeof(string),
+                            var row = new DataGridViewRow();
+                            row.Cells.Add(new DataGridViewTextBoxCell()
+                            {
+                                Value = item.RequestUrl,
+                                ValueType = typeof(string),
+                            });
+                            row.Cells.Add(new DataGridViewTextBoxCell()
+                            {
+                                Value = item.Method,
+                                ValueType = typeof(string),
+                            });
+                            row.Cells.Add(new DataGridViewTextBoxCell()
+                            {
+                                Value = item.ResponseType,
+                                ValueType = typeof(string),
+                            });
+                            row.Cells.Add(new DataGridViewTextBoxCell()
+                            {
+                                Value = item.ResponseData,
+                                ValueType = typeof(string),
+                            });
+                            row.ContextMenuStrip = MenuData;
+                            DataGridViewMain.Rows.Add(row);
                         });
-                        row.Cells.Add(new DataGridViewTextBoxCell()
-                        {
-                            Value = item.Method,
-                            ValueType = typeof(string),
-                        });
-                        row.Cells.Add(new DataGridViewTextBoxCell()
-                        {
-                            Value = item.ResponseType,
-                            ValueType = typeof(string),
-                        });
-                        row.Cells.Add(new DataGridViewTextBoxCell()
-                        {
-                            Value = item.ResponseData,
-                            ValueType = typeof(string),
-                        });
-                        row.ContextMenuStrip = MenuData;
-                        DataGridViewMain.Rows.Add(row);
                     });
-                });
+                }
             });
 
         }
 
         private void MenuEdit_Click(object sender, EventArgs e)
         {
-            var selectedRow = DataGridViewMain.Rows[DataGridViewMain.SelectedCells[0].RowIndex];
-            if (selectedRow == null)
+            if (!TryGetSelectedRow(out var selectedRow) || selectedRow == null)
                 return;
 
-            var url = selectedRow.Cells[0].Value.ToString()!;
-            var method = selectedRow.Cells[1].Value!.ToString()!;
-            var type = (int)selectedRow.Cells[2].Value;
+            var url = selectedRow.Cells[0].Value?.ToString();
+            var method = selectedRow.Cells[1].Value?.ToString();
+            if (string.IsNullOrEmpty(url) || string.IsNullOrEmpty(method))
+                return;
+
+            var type = Convert.ToInt32(selectedRow.Cells[2].Value);
             var responseData = selectedRow.Cells[3].Value?.ToString();
-            new DataEditForm(new MockupObject(url, method, type, responseData), _coreService).ShowDialog();
+            using var form = new DataEditForm(new MockupObject(url, method, type, responseData), _coreService);
+            form.ShowDialog();
             LoadDataGridView();
         }
 
         private async void MenuDelete_Click(object sender, EventArgs e)
         {
-            var selectedRow = DataGridViewMain.Rows[DataGridViewMain.SelectedCells[0].RowIndex];
-            if (selectedRow == null)
+            if (!TryGetSelectedRow(out var selectedRow) || selectedRow == null)
                 return;
 
-            await _coreService.DeleteRecordAsync(selectedRow.Cells[0].Value.ToString()!, selectedRow.Cells[1].Value.ToString()!);
+            var url = selectedRow.Cells[0].Value?.ToString();
+            var method = selectedRow.Cells[1].Value?.ToString();
+            if (string.IsNullOrEmpty(url) || string.IsNullOrEmpty(method))
+                return;
+
+            try
+            {
+                await _coreService.DeleteRecordAsync(url, method);
+            }
+            catch (Exception ex)
+            {
+                Alert.Show($"删除失败：{ex.Message}");
+            }
             LoadDataGridView();
         }
 
-        private void MenuItem_CopyUrl_Click(object sender, EventArgs e)
+        private async void MenuItem_CopyUrl_Click(object sender, EventArgs e)
         {
-            var selectedRow = DataGridViewMain.Rows[DataGridViewMain.SelectedCells[0].RowIndex];
-            var uri = selectedRow.Cells[0].Value.ToString();
-            Clipboard.SetText($"http://localhost:{State.Port}{uri}");
+            if (!TryGetSelectedRow(out var selectedRow) || selectedRow == null)
+                return;
+
+            var uri = selectedRow.Cells[0].Value?.ToString();
+            if (string.IsNullOrEmpty(uri))
+                return;
+
+            try
+            {
+                var global = await _coreService.GetGlobal();
+                Clipboard.SetText($"http://localhost:{global.ListenerPort}{uri}");
+            }
+            catch (Exception ex)
+            {
+                Alert.Show($"复制失败：{ex.Message}");
+            }
         }
 
         private void DataGridViewMain_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
         {
+            if (e.RowIndex < 0 || e.ColumnIndex != 2)
+                return;
+
             var val = DataGridViewMain.Rows[e.RowIndex].Cells[e.ColumnIndex].Value;
-            if (e.ColumnIndex == 2)
-            {
-                e.Value = ((ResponseType)val).GetDescription();
-            }
+            if (val != null)
+                e.Value = ((ResponseType)Convert.ToInt32(val)).GetDescription();
         }
     }
 }

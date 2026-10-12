@@ -44,49 +44,65 @@ namespace MockupServer.UI
             {
                 var list = await _dataService.GetDomainList();
 
-                BeginInvoke(() =>
+                if (IsHandleCreated && !IsDisposed)
                 {
-                    DataGridViewMain.Rows.Clear();
-                    list.ForEach(item =>
+                    BeginInvoke(() =>
                     {
-                        var row = new DataGridViewRow();
-                        row.Cells.Add(new DataGridViewTextBoxCell()
+                        DataGridViewMain.Rows.Clear();
+                        list.ForEach(item =>
                         {
-                            Value = item.UrlPrefix,
-                            ValueType = typeof(string),
+                            var row = new DataGridViewRow();
+                            row.Cells.Add(new DataGridViewTextBoxCell()
+                            {
+                                Value = item.UrlPrefix,
+                                ValueType = typeof(string),
+                            });
+                            row.Cells.Add(new DataGridViewTextBoxCell()
+                            {
+                                Value = item.Target,
+                                ValueType = typeof(string),
+                            });
+                            DataGridViewMain.Rows.Add(row);
                         });
-                        row.Cells.Add(new DataGridViewTextBoxCell()
-                        {
-                            Value = item.Target,
-                            ValueType = typeof(string),
-                        });
-                        DataGridViewMain.Rows.Add(row);
                     });
-                });
+                }
             });
 
         }
 
         private async void DataGridViewMain_CellEndEdit(object sender, DataGridViewCellEventArgs e)
         {
+            if (e.RowIndex < 0)
+                return;
+
             var row = DataGridViewMain.Rows[e.RowIndex];
 
             var urlPrefix = row.Cells[0].Value?.ToString();
             var target = row.Cells[1].Value?.ToString();
             if (string.IsNullOrWhiteSpace(urlPrefix) || string.IsNullOrWhiteSpace(target))
             {
+                LoadGridData();
                 return;
             }
 
-            if (!urlPrefix.EndsWith('/') && !target.EndsWith('/'))
+            // 域前缀必须以/结尾，避免 /abcdef 被 /abc 域错误处理
+            if (!urlPrefix.EndsWith('/'))
             {
-                // 避免出现 /abcdef 被 /abc 域处理的情况
-                MessageBox.Show("需要以/结尾");
+                Alert.Show("域需要以/结尾");
+                LoadGridData();
                 return;
             }
 
-            var model = new Domain(urlPrefix, target);
-            await _dataService.InsertOrUpdateDomain(model);
+            try
+            {
+                var model = new Domain(urlPrefix, target);
+                await _dataService.InsertOrUpdateDomain(model);
+            }
+            catch (Exception ex)
+            {
+                Alert.Show($"保存域名失败：{ex.Message}");
+                LoadGridData();
+            }
         }
 
         private async void DataGridViewMain_UserDeletedRow(object sender, DataGridViewRowEventArgs e)
@@ -95,7 +111,14 @@ namespace MockupServer.UI
             if (string.IsNullOrEmpty(urlPrefix))
                 return;
 
-            await _dataService.DeleteDomain(urlPrefix);
+            try
+            {
+                await _dataService.DeleteDomain(urlPrefix);
+            }
+            catch (Exception ex)
+            {
+                Alert.Show($"删除域名失败：{ex.Message}");
+            }
         }
     }
 }

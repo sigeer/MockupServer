@@ -1,6 +1,6 @@
 ## 用途
 
-开发时需要模拟数据
+模拟数据，结合代理使用
 
 ## 特性
 
@@ -23,18 +23,20 @@
 
 ### 例子
 
+域必须以`/`结尾（保存时校验），匹配时会自动规范化处理
+
 |域|目标|
 |---|-----|
 |http://api.sample1.com/|http://localhost:9876|
 |http://api.sample2.com/auth/|http://localhost:8765|
-|http://api.sample2.com/auth/token|http://localhost:7654|
+|http://api.sample2.com/auth/token/|http://localhost:7654|
 
 |接收到的请求|匹配的域|相对路径(步骤2)|实际请求(步骤3)|
 |---|-----|-----|-----------------------------|
 |http://api.sample1.com/auth/xxx |http://api.sample1.com/|/auth/xxx|http://localhost:9876/auth/xxx|
 |http://api.sample2.com/xxx|404|||
 |http://api.sample2.com/auth/xxx|http://api.sample2.com/auth/|/xxx|http://localhost:8765/xxx|
-|http://api.sample2.com/auth/token/1|http://api.sample2.com/auth/token|/xxx|http://localhost:7654/1|
+|http://api.sample2.com/auth/token/1|http://api.sample2.com/auth/token/|/1|http://localhost:7654/1|
 
 
 ## 使用方法
@@ -51,3 +53,22 @@
 
 ## 新功能
 - 根据定义的C#类返回对象（数据随机），根类必须命名为Root
+例如：
+```
+public class Root
+{
+    // 不能修改data的名称
+    public TestClass data { get; set; }
+}
+
+public class TestClass
+{
+	public string Str { get; set;}
+	public int Int { get; set; }
+	public decimal Dec { get; set;}
+}
+```
+返回
+```
+{"Str":"e644QcxkR","Int":2042856089,"Dec":2078719884.522044554719677}
+```

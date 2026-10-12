@@ -19,42 +19,55 @@ namespace MockupServer.UI
 
         private async void BtnSave_Click(object sender, EventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(TxtUrl.Text))
+            try
             {
-                Alert.Show("请输入Url");
-                return;
-            }
-
-            if (!TxtUrl.Text.StartsWith('/'))
-            {
-                Alert.Show("Url要以\"/\"开头");
-                return;
-            }
-
-            if (ComboBox_Type.SelectedValue == null)
-            {
-                Alert.Show("请选择返回类型");
-                return;
-            }
-            if ((ResponseType)ComboBox_Type.SelectedValue == ResponseType.JsonObject)
-            {
-                try
+                if (string.IsNullOrWhiteSpace(TxtUrl.Text))
                 {
-                    var obj = JsonConvert.DeserializeObject<object>(model.ResponseData ?? "");
-                    if (obj == null)
+                    Alert.Show("请输入Url");
+                    return;
+                }
+
+                if (!TxtUrl.Text.StartsWith('/'))
+                {
+                    Alert.Show("Url要以\"/\"开头");
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(ComboBox_Method.Text))
+                {
+                    Alert.Show("请选择请求方式");
+                    return;
+                }
+
+                if (ComboBox_Type.SelectedValue == null)
+                {
+                    Alert.Show("请选择返回类型");
+                    return;
+                }
+                if ((ResponseType)ComboBox_Type.SelectedValue == ResponseType.JsonObject)
+                {
+                    try
                     {
-                        Alert.Show("body应当是一个json对象");
+                        var obj = JsonConvert.DeserializeObject<object>(model.ResponseData ?? "");
+                        if (obj == null)
+                        {
+                            Alert.Show("body应当是一个json对象");
+                            return;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Alert.Show(ex.Message);
                         return;
                     }
                 }
-                catch (Exception ex)
-                {
-                    Alert.Show(ex.Message);
-                    return;
-                }
+                await _dataService.InsertOrUpdateRecord(TxtUrl.Text, ComboBox_Method.Text, (int)ComboBox_Type.SelectedValue, model.ResponseData);
+                Close();
             }
-            await _dataService.InserOrUpdateRecord(TxtUrl.Text, ComboBox_Method.Text, (int)ComboBox_Type.SelectedValue, model.ResponseData);
-            Close();
+            catch (Exception ex)
+            {
+                Alert.Show($"保存失败：{ex.Message}");
+            }
         }
 
         private void BtnCancel_Click(object sender, EventArgs e)
@@ -62,13 +75,13 @@ namespace MockupServer.UI
             Close();
         }
 
-        private void InsertRecordForm_Load(object sender, EventArgs e)
+        private void DataEditForm_Load(object sender, EventArgs e)
         {
             TxtUrl.Text = model.RequestUrl;
 
             var typeList = Enum.GetValues<ResponseType>();
 
-            /// 需要先设置Member， 再设置DataSouce --设置ValueMember，DataSource都会触发SelectedValueChanged
+            // 需要先设置Member， 再设置DataSouce --设置ValueMember，DataSource都会触发SelectedValueChanged
             ComboBox_Type.ValueMember = "Value";
             ComboBox_Type.DisplayMember = "Key";
             ComboBox_Type.DataSource = typeList.Select(x => new KeyValuePair<string, int>(x.GetDescription(), (int)x)).ToList();
@@ -83,14 +96,14 @@ namespace MockupServer.UI
             var selectedType = (ResponseType)ComboBox_Type.SelectedValue!;
             if (selectedType == ResponseType.File)
             {
-                var ofd = new OpenFileDialog();
+                using var ofd = new OpenFileDialog();
                 if (ofd.ShowDialog() == DialogResult.OK)
                 {
                     model.ResponseData = ofd.FileName;
                 }
                 return;
             }
-            var form = new EditorForm(model.ResponseData, selectedType);
+            using var form = new EditorForm(model.ResponseData, selectedType);
             form.OnSubmit += (obj, content) =>
             {
                 model.ResponseData = content;

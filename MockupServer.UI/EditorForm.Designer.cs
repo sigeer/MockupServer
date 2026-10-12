@@ -82,6 +82,7 @@
             Controls.Add(Btn_Submit);
             Name = "EditorForm";
             Text = "编辑器";
+            KeyDown += EditorForm_KeyDown;
             ResumeLayout(false);
         }
 

@@ -1,52 +1,35 @@
 ﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc.WebApiCompatShim;
 
 namespace MockupServer
 {
     public static class RequestBody
     {
-        public static async Task<HttpRequestMessage> GetHttpRequestMessage(HttpContext context, Uri? newUri = null)
+        /// <summary>
+        /// 基于已缓冲的请求体构造代理请求，避免重复读取原始请求流
+        /// </summary>
+        public static HttpRequestMessage CreateProxyRequest(HttpRequest request, Uri newUri, byte[]? body)
         {
-            var requestMsg = new HttpRequestMessageFeature(context).HttpRequestMessage;
-            if (newUri != null)
-                requestMsg.RequestUri = newUri;
-            return await CloneHttpRequestMessageAsync(requestMsg);
-        }
-        private static async Task<HttpRequestMessage> CloneHttpRequestMessageAsync(HttpRequestMessage request)
-        {
-            HttpRequestMessage copyOfRequest = new HttpRequestMessage(request.Method, request.RequestUri);
-
-            // Copy the request's content (via a MemoryStream) into the cloned object
-            var ms = new MemoryStream();
-            if (request.Content != null)
+            var requestMsg = new HttpRequestMessage(new HttpMethod(request.Method), newUri)
             {
-                await request.Content.CopyToAsync(ms);
-                ms.Position = 0;
-                copyOfRequest.Content = new StreamContent(ms);
-
-                // Copy the content headers
-                if (request.Content.Headers != null)
+                Version = request.Protocol switch
                 {
-                    foreach (var h in request.Content.Headers)
-                    {
-                        copyOfRequest.Content.Headers.Add(h.Key, h.Value);
-                    }
-                }
-            }
+                    "HTTP/2" => System.Net.HttpVersion.Version20,
+                    _ => System.Net.HttpVersion.Version11,
+                },
+                VersionPolicy = HttpVersionPolicy.RequestVersionOrLower,
+            };
 
-            copyOfRequest.Version = request.Version;
+            if (body != null && body.Length > 0)
+                requestMsg.Content = new ByteArrayContent(body);
 
-            foreach (KeyValuePair<string, object?> prop in request.Options)
+            foreach (var h in request.Headers)
             {
-                copyOfRequest.Options.TryAdd(prop.Key, prop.Value);
+                var values = h.Value.ToArray();
+                if (!requestMsg.Headers.TryAddWithoutValidation(h.Key, values))
+                    requestMsg.Content?.Headers.TryAddWithoutValidation(h.Key, values);
             }
 
-            foreach (KeyValuePair<string, IEnumerable<string>> header in request.Headers)
-            {
-                copyOfRequest.Headers.TryAddWithoutValidation(header.Key, header.Value);
-            }
-
-            return copyOfRequest;
+            return requestMsg;
         }
     }
 }

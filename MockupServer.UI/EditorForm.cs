@@ -9,6 +9,7 @@ namespace MockupServer.UI
 {
     public partial class EditorForm : Form
     {
+        static bool _highlightingRegistered;
         readonly ResponseType _type;
         private TextEditorControl textEditorControl;
         public EventHandler<string>? OnSubmit;
@@ -17,6 +18,7 @@ namespace MockupServer.UI
             _type = type;
 
             InitializeComponent();
+            KeyPreview = true;
 
             // 创建 TextEditor 控件实例
             textEditorControl = new TextEditorControl();
@@ -61,11 +63,15 @@ namespace MockupServer.UI
 
         private void InitializeHighLighting()
         {
+            if (_highlightingRegistered)
+                return;
+
             string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "HighLighting");
             if (Directory.Exists(path))
             {
                 var fsmp = new FileSyntaxModeProvider(path);
                 HighlightingManager.Manager.AddSyntaxModeFileProvider(fsmp);
+                _highlightingRegistered = true;
                 // 更多高亮配置：https://github.com/xv/ICSharpCode.TextEditor-Lexers/tree/master/Syntax
             }
         }
@@ -120,11 +126,12 @@ namespace MockupServer.UI
                     // 将 JObject 对象序列化为缩进后的 JSON 字符串
                     textEditorControl.Text = JsonConvert.SerializeObject(jsonObject, settings);
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Alert.Show($"Json格式化失败：{ex.Message}");
                 }
             }
-            if (_type == ResponseType.XmlObject)
+            else if (_type == ResponseType.XmlObject)
             {
                 try
                 {
@@ -153,13 +160,26 @@ namespace MockupServer.UI
                         textEditorControl.Text = stringWriter.ToString();
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Alert.Show($"Xml格式化失败：{ex.Message}");
                 }
             }
-            if (_type == ResponseType.RandomJsonDataFromCSharp)
+            else if (_type == ResponseType.RandomJsonDataFromCSharp)
             {
                 textEditorControl.Text = GetDefaultCodeForRandom();
+            }
+        }
+
+        private void EditorForm_KeyDown(object? sender, KeyEventArgs e)
+        {
+            if (e.Modifiers == Keys.Control)
+            {
+                if (e.KeyCode == Keys.S)
+                {
+                    OnSubmit?.Invoke(sender, textEditorControl.Text);
+                    Close();
+                }
             }
         }
     }

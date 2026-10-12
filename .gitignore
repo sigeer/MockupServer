@@ -116,6 +116,11 @@ ipch/
 *.VC.db
 *.VC.VC.opendb
 
+# SQLite runtime database (path depends on process CWD)
+database.db
+database.db-wal
+database.db-shm
+
 # Visual Studio profiler
 *.psess
 *.vsp

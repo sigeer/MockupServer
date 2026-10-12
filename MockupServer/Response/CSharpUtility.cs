@@ -1,9 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using Microsoft.Extensions.Logging;
+using Serilog;
+using System.Collections.Concurrent;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 
@@ -11,8 +11,8 @@ namespace MockupServer.Response
 {
     public class CSharpUtility
     {
-        Random random = new Random();
-        static HashSet<Type> numericTypes = new HashSet<Type>
+        static readonly Random SharedRandom = Random.Shared;
+        static readonly HashSet<Type> NumericTypes = new HashSet<Type>
         {
             typeof(byte), typeof(sbyte),
             typeof(short), typeof(ushort),
@@ -22,7 +22,46 @@ namespace MockupServer.Response
             typeof(decimal)
         };
 
-        Type[] allTypes = new Type[0];
+        static readonly char[] CharArray = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".ToCharArray();
+
+        static readonly object ReferenceLock = new();
+        static MetadataReference[]? _cachedReferences;
+        static readonly ConcurrentDictionary<string, Assembly> CompileCache = new();
+
+        readonly Microsoft.Extensions.Logging.ILogger? _logger;
+        Type[] allTypes = Array.Empty<Type>();
+
+        public CSharpUtility(Microsoft.Extensions.Logging.ILogger? logger = null)
+        {
+            _logger = logger;
+        }
+
+        static MetadataReference[] GetMetadataReferences()
+        {
+            if (_cachedReferences != null)
+                return _cachedReferences;
+
+            lock (ReferenceLock)
+            {
+                if (_cachedReferences != null)
+                    return _cachedReferences;
+
+                var references = AppDomain.CurrentDomain.GetAssemblies()
+                    .Where(a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location))
+                    .Select(a => MetadataReference.CreateFromFile(a.Location))
+                    .Cast<MetadataReference>()
+                    .Concat(new[]
+                    {
+                        MetadataReference.CreateFromFile(typeof(object).GetTypeInfo().Assembly.Location),
+                        MetadataReference.CreateFromFile(typeof(Console).GetTypeInfo().Assembly.Location),
+                        MetadataReference.CreateFromFile(typeof(RangeAttribute).GetTypeInfo().Assembly.Location)
+                    })
+                    .ToArray();
+
+                _cachedReferences = references;
+                return references;
+            }
+        }
 
         public object GenerateObjectByCSharpClass(string inputClassString)
         {
@@ -34,95 +73,88 @@ namespace MockupServer.Response
 
         namespace DynamicNamespace
         {{
-          {inputClassString}  
+          {inputClassString}
         }}";
 
-            // 编译代码
+            Assembly assembly;
+            try
+            {
+                assembly = CompileCache.GetOrAdd(inputClassString, _ => Compile(inputClassString, code));
+            }
+            catch (Exception ex)
+            {
+                // 编译失败保持返回错误对象的既有行为
+                return new { text = "error", message = ex.Message };
+            }
+
+            allTypes = assembly.GetTypes();
+            var rootTypes = allTypes.Where(x => x.Name == "Root").ToArray();
+            if (rootTypes.Length == 0)
+                throw new Exception("没找到Root类");
+
+            if (rootTypes.Length > 1)
+                throw new Exception("重复声明了Root类");
+
+            var entryProperty = rootTypes[0].GetProperty("data");
+            if (entryProperty == null)
+                throw new Exception("Root类中没找到data属性");
+
+            try
+            {
+                return GenerateDataByProperty(entryProperty)!;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "生成随机数据失败");
+                return new { text = "error", message = ex.Message };
+            }
+        }
+
+        static Assembly Compile(string inputClassString, string code)
+        {
             var syntaxTree = CSharpSyntaxTree.ParseText(code);
-
-            var references = AppDomain.CurrentDomain.GetAssemblies()
-                  .Where(a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location))
-                  .Select(a => MetadataReference.CreateFromFile(a.Location))
-                  .Cast<MetadataReference>()
-                  .Concat(new[]
-                {
-                    MetadataReference.CreateFromFile(typeof(object).GetTypeInfo().Assembly.Location),
-                    MetadataReference.CreateFromFile(typeof(Console).GetTypeInfo().Assembly.Location),
-                    MetadataReference.CreateFromFile(typeof(RangeAttribute).GetTypeInfo().Assembly.Location)
-                });
-
             var compilation = CSharpCompilation.Create(
                 "DynamicAssembly",
                 new[] { syntaxTree },
-                references,
+                GetMetadataReferences(),
                 new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
-            using (var ms = new MemoryStream())
+            using var ms = new MemoryStream();
+            EmitResult result = compilation.Emit(ms);
+
+            if (!result.Success)
             {
-                EmitResult result = compilation.Emit(ms);
-
-                if (!result.Success)
-                {
-                    // 编译失败，输出错误信息
-                    foreach (Diagnostic diagnostic in result.Diagnostics)
-                    {
-                        Console.Error.WriteLine(diagnostic.ToString());
-                    }
-                    return new { text = "error", message = string.Join(Environment.NewLine, result.Diagnostics.Select(x => x.ToString())) };
-                }
-                else
-                {
-                    try
-                    {
-                        // 编译成功，加载程序集
-                        ms.Seek(0, SeekOrigin.Begin);
-                        Assembly assembly = Assembly.Load(ms.ToArray());
-
-                        // 使用反射获取类
-                        allTypes = assembly.GetTypes();
-                        var rootTypes = allTypes.Where(x => x.Name == "Root");
-                        if (rootTypes.Count() == 0)
-                            throw new Exception("没找到Root类");
-
-                        if (rootTypes.Count() > 1)
-                            throw new Exception("重复声明了Root类");
-
-                        var entryProperty = rootTypes.First()!.GetProperty("data");
-                        if (entryProperty == null)
-                            throw new Exception("Root类中没找到data属性");
-
-                        return GenerateDataByProperty(entryProperty);
-                    }
-                    catch (Exception ex)
-                    {
-                        return new { text = "error", message = ex.Message };
-                    }
-                }
+                var message = string.Join(Environment.NewLine, result.Diagnostics.Select(x => x.ToString()));
+                Log.Logger.Error("随机数据C#代码编译失败：{Diagnostics}", message);
+                throw new Exception(message);
             }
+
+            ms.Seek(0, SeekOrigin.Begin);
+            return Assembly.Load(ms.ToArray());
         }
 
         public object? GenerateDataByType(Type propertyType, PropertyInfo? propertyInfo = null)
         {
             var rangeAttr = propertyInfo?.GetCustomAttribute<RangeAttribute>();
-            int min = (int?)rangeAttr?.Minimum ?? 0; 
-            int lengthMax = (int?)rangeAttr?.Maximum ?? random.Next(10);
+            int min = rangeAttr != null ? Convert.ToInt32(rangeAttr.Minimum) : 0;
+            int lengthMax = rangeAttr != null ? Convert.ToInt32(rangeAttr.Maximum) : SharedRandom.Next(10);
 
             var nullableType = Nullable.GetUnderlyingType(propertyType);
             var realType = nullableType ?? propertyType;
 
-            if (nullableType != null && random.NextDouble() < 0.2)
+            if (nullableType != null && SharedRandom.NextDouble() < 0.2)
                 return null;
 
             if (propertyType == typeof(string))
             {
-                if (random.NextDouble() < 0.2)
+                if (SharedRandom.NextDouble() < 0.2)
                     return null;
 
                 return GenerateRandomString(lengthMax);
             }
             else if (realType == typeof(bool))
             {
-                return DateTime.Now.Ticks % 2 == 0;
+                return SharedRandom.Next(2) == 0;
             }
             else if (realType == typeof(char))
             {
@@ -132,9 +164,9 @@ namespace MockupServer.Response
             {
                 return DateTime.Now;
             }
-            else if (numericTypes.Contains(realType))
+            else if (NumericTypes.Contains(realType))
             {
-                return GenerateRandomNumber(realType, min, (int?)rangeAttr?.Maximum);
+                return GenerateRandomNumber(realType, min, rangeAttr != null ? Convert.ToInt32(rangeAttr.Maximum) : null);
             }
             else if (propertyType.IsGenericType)
             {
@@ -145,7 +177,7 @@ namespace MockupServer.Response
                     var elementType = genericArguments[0]!;
                     object listInstance = Activator.CreateInstance(propertyType)!;
                     var addMethod = propertyType.GetMethod("Add")!;
-                    var listLength = random.Next(min, lengthMax);
+                    var listLength = SharedRandom.Next(min, lengthMax);
                     for (int i = 0; i < listLength; i++)
                     {
                         addMethod.Invoke(listInstance, new object?[] { GenerateDataByType(elementType) });
@@ -158,7 +190,7 @@ namespace MockupServer.Response
                     var valueType = Nullable.GetUnderlyingType(genericArguments[1]) ?? genericArguments[1];
                     object dictionary = Activator.CreateInstance(propertyType)!;
                     var addMethod = propertyType.GetMethod("Add")!;
-                    var listLength = random.Next(min, lengthMax);
+                    var listLength = SharedRandom.Next(min, lengthMax);
                     for (int i = 0; i < listLength; i++)
                     {
                         addMethod.Invoke(dictionary, new object?[] { GenerateDataByType(keyType)!, GenerateDataByType(valueType) });
@@ -173,7 +205,7 @@ namespace MockupServer.Response
             else if (propertyType.IsArray)
             {
                 var elementType = propertyType.GetElementType()!;
-                Array arrayInstance = Array.CreateInstance(elementType, random.Next(min, lengthMax));
+                Array arrayInstance = Array.CreateInstance(elementType, SharedRandom.Next(min, lengthMax));
                 for (int i = 0; i < arrayInstance.Length; i++)
                 {
                     arrayInstance.SetValue(GenerateDataByType(elementType), i);
@@ -187,7 +219,6 @@ namespace MockupServer.Response
             throw new Exception($"暂不支持该类型的随机生成{propertyType.FullName}");
         }
 
-
         public object? GenerateDataByProperty(PropertyInfo propery)
         {
             return GenerateDataByType(propery.PropertyType, propery);
@@ -197,12 +228,11 @@ namespace MockupServer.Response
         {
             object obj = Activator.CreateInstance(responseType)!;
 
-            // 获取所有公共属性
-            PropertyInfo[] properties = responseType.GetProperties();
-
-            // 为每个属性赋予随机字符的值
-            foreach (PropertyInfo property in properties)
+            foreach (PropertyInfo property in responseType.GetProperties())
             {
+                if (!property.CanWrite)
+                    continue;
+
                 var defaultAttr = property.GetCustomAttribute<DefaultAttribute>();
                 if (defaultAttr != null)
                     property.SetValue(obj, defaultAttr.value);
@@ -214,38 +244,43 @@ namespace MockupServer.Response
 
         private string GenerateRandomString(int length)
         {
-            Random random = new Random();
-            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-            return new string(Enumerable.Repeat(chars, length)
-              .Select(s => s[random.Next(s.Length)]).ToArray());
+            var chars = new char[length];
+            for (int i = 0; i < length; i++)
+            {
+                chars[i] = CharArray[SharedRandom.Next(CharArray.Length)];
+            }
+            return new string(chars);
         }
 
         private char GenerateRandomChar()
         {
-            Random random = new Random();
-            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-            return chars[random.Next(chars.Length)];
+            return CharArray[SharedRandom.Next(CharArray.Length)];
         }
+
         private object GenerateRandomNumber(Type type, int min, int? max = null)
         {
             if (type == typeof(int))
-                return random.Next(min, max ?? int.MaxValue);
+                return SharedRandom.Next(min, max ?? int.MaxValue);
             else if (type == typeof(double))
-                return random.NextDouble() * random.Next(min, max ?? int.MaxValue);
+                return SharedRandom.NextDouble() * SharedRandom.Next(min, max ?? int.MaxValue);
             else if (type == typeof(decimal))
-                return (decimal)random.NextDouble() + random.Next(min, max ?? int.MaxValue);
+                return (decimal)SharedRandom.NextDouble() + SharedRandom.Next(min, max ?? int.MaxValue);
             else if (type == typeof(float))
-                return random.NextSingle() * random.Next(min, max ?? int.MaxValue);
+                return SharedRandom.NextSingle() * SharedRandom.Next(min, max ?? int.MaxValue);
             else if (type == typeof(long))
-                return random.NextInt64(min, max ?? long.MaxValue);
+                return SharedRandom.NextInt64(min, max ?? long.MaxValue);
             else if (type == typeof(short))
-                return random.Next(min, max ?? short.MaxValue);
+                return (short)SharedRandom.Next(min, max ?? short.MaxValue);
             else if (type == typeof(ushort))
-                return random.Next(min, max ?? ushort.MaxValue);
+                return (ushort)SharedRandom.Next(min, max ?? ushort.MaxValue);
             else if (type == typeof(byte))
-                return random.Next(min, max ?? byte.MaxValue);
+                return (byte)SharedRandom.Next(min, max ?? byte.MaxValue);
             else if (type == typeof(sbyte))
-                return random.Next(min, max ?? sbyte.MaxValue);
+                return (sbyte)SharedRandom.Next(min, max ?? sbyte.MaxValue);
+            else if (type == typeof(uint))
+                return (uint)SharedRandom.NextInt64(min, max ?? (long)uint.MaxValue);
+            else if (type == typeof(ulong))
+                return (ulong)SharedRandom.NextInt64(min, max ?? long.MaxValue);
             else
             {
                 return 0;
@@ -254,7 +289,7 @@ namespace MockupServer.Response
     }
 
     [AttributeUsage(AttributeTargets.Property)]
-    public class DefaultAttribute:Attribute
+    public class DefaultAttribute : Attribute
     {
         public object value;
 
